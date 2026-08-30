@@ -28,7 +28,7 @@ export const STOP_WORDS = new Set([
 /** Split text into lower-cased content terms (letters, length ≥ 3, no stop words). */
 export function terms(text: string): string[] {
   const out: string[] = [];
-  const re = /[a-zA-Z][a-zA-Z'-]{2,}/g;
+  const re = /[a-zA-ZА-Яа-яЇїІіЄєҐґ][a-zA-ZА-Яа-яЇїІіЄєҐґ'’-]{2,}/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     const w = m[0].toLowerCase().replace(/^['-]+|['-]+$/g, "");

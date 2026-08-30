@@ -579,7 +579,7 @@ export class EngineCore {
       return remaining + (/[.,!?;:]$/.test(insert) ? 1 : 0);
     };
     // A recommendation that is only punctuation ("...", ",") is never worth a slot.
-    const hasAlnum = (s: string): boolean => /[A-Za-z0-9]/.test(s);
+    const hasAlnum = (s: string): boolean => /[A-Za-z0-9А-Яа-яЇїІіЄєҐґ]/.test(s);
 
     const best = new Map<string, { insert: string; kind: SuggestItem["kind"]; p: number; saved: number }>();
     const consider = (insert: string, kind: SuggestItem["kind"], pWant: number): void => {
@@ -637,7 +637,7 @@ export class EngineCore {
     // dislike more. So a singular whose plural is also a candidate gets +1 to its saving, which
     // trims the plural's length-driven domination without hiding it.
     for (const c of best.values()) {
-      if (/[a-z]$/.test(c.insert) && (best.has(c.insert + "s") || best.has(c.insert + "es"))) c.saved += 1;
+      if (/[a-zа-яіїєґ]$/.test(c.insert) && (best.has(c.insert + "s") || best.has(c.insert + "es"))) c.saved += 1;
     }
     const menu = orderMenu([...best.values()], k);
 

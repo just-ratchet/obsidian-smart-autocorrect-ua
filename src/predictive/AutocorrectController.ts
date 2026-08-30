@@ -382,7 +382,7 @@ export class AutocorrectController {
     // Fraction glyphs ("1/2" → "½"), also no letter token of their own.
     if (this.tryFraction(editor, cursor, uptoToken)) return;
 
-    const tokenMatch = uptoToken.match(/([A-Za-z][A-Za-z'-]*)$/);
+    const tokenMatch = uptoToken.match(/([A-Za-zА-Яа-яЇїІіЄєҐґ][A-Za-zА-Яа-яЇїІіЄєҐґ'’-]*)$/);
     if (!tokenMatch) return;
 
     const token = tokenMatch[1];

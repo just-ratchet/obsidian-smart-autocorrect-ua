@@ -51,7 +51,7 @@ export function buildSerializedCountsFromDocs(docs: string[]): {
   };
 
   const norm = (w: string): string =>
-    w.toLowerCase().replace(/^[^a-z0-9]+/i, "").replace(/[^a-z0-9]+$/i, "");
+    w.toLowerCase().replace(/^[^a-z0-9а-яіїєґ]+/i, "").replace(/[^a-z0-9а-яіїєґ]+$/i, "");
 
   for (const text of docs) {
     // sentence split (abbreviation-aware, simplified)

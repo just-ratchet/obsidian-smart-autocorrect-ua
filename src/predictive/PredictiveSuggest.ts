@@ -230,7 +230,7 @@ export class PredictiveSuggest extends EditorSuggest<SuggestItem> {
       if (cur) return { start: { line: cursor.line, ch: cur.start }, end: cursor, query: before.slice(cur.start) };
     }
 
-    const m = before.match(/([A-Za-z][A-Za-z'-]*)$/);
+    const m = before.match(/([A-Za-zА-Яа-яЇїІіЄєҐґ][A-Za-zА-Яа-яЇїІіЄєҐґ'’-]*)$/);
     const query = m ? m[1] : "";
     const startCh = cursor.ch - query.length;
 

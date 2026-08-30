@@ -385,7 +385,7 @@ export class PredictiveFeature {
     if (editor.getSelection()) return { from: editor.getCursor("from"), to: editor.getCursor("to") };
     const cur = editor.getCursor();
     const line = editor.getLine(cur.line);
-    const isW = (c: string) => /[A-Za-z'-]/.test(c);
+    const isW = (c: string) => /[A-Za-zА-Яа-яЇїІіЄєҐґ'’-]/.test(c);
     let s = cur.ch;
     let e = cur.ch;
     while (s > 0 && isW(line[s - 1])) s--;
@@ -751,7 +751,7 @@ export class PredictiveFeature {
           );
         }
         // Suggest more eloquent / academic alternatives for the word (needs the neural model).
-        if (this.settings.suggestAlternatives && this.engine.ready && /^[A-Za-z][A-Za-z'-]*$/.test(word)) {
+        if (this.settings.suggestAlternatives && this.engine.ready && /^[A-Za-zА-Яа-яЇїІіЄєҐґ][A-Za-zА-Яа-яЇїІіЄєҐґ'’-]*$/.test(word)) {
           const range = this.selectionOrWordRange(editor);
           // Left context (the words leading up to the target) lets the ranker prefer substitutes that
           // fit THIS sentence - "the coffee was very strong" → potent, not weak. A couple of lines is
@@ -1222,7 +1222,7 @@ export class PredictiveFeature {
  * meant right-clicking an abbreviation - the one kind of token whose capitalisation behaviour
  * you most often want to change - offered no menu item at all.
  */
-const WORD_OR_ABBREV = /^[A-Za-z][A-Za-z'-]*(?:\.[A-Za-z'-]+)*\.?$/;
+const WORD_OR_ABBREV = /^[A-Za-zА-Яа-яЇїІіЄєҐґ][A-Za-zА-Яа-яЇїІіЄєҐґ'’-]*(?:\.[A-Za-zА-Яа-яЇїІіЄєҐґ'’-]+)*\.?$/;
 
 /** The selected text if it's a single word, else the word under the cursor - for the
  *  right-click "add to dictionary" menu. Returns null if there is no plain word there. */
@@ -1231,7 +1231,7 @@ function selectedOrCursorWord(editor: Editor): string | null {
   if (sel) return WORD_OR_ABBREV.test(sel) ? sel : null;
   const cur = editor.getCursor();
   const line = editor.getLine(cur.line);
-  const isW = (c: string) => /[A-Za-z'.-]/.test(c);
+  const isW = (c: string) => /[A-Za-zА-Яа-яЇїІіЄєҐґ'’.-]/.test(c);
   let s = cur.ch;
   let e = cur.ch;
   while (s > 0 && isW(line[s - 1])) s--;
