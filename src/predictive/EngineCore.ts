@@ -542,7 +542,16 @@ export class EngineCore {
         .slice(0, k)
         .map((c) => ({ word: c.word, score: c.score }));
     }
-    if (seeds.length === 0) return [];
+    if (typed) {
+      // A model trained on ANOTHER LANGUAGE cannot complete what is being typed: none of its
+      // candidates share the prefix. predict() keeps them anyway when nothing matches (its
+      // prefix filter is skipped rather than emptying the list), which is why an English LM
+      // answers Ukrainian input with "the"/"and"/"in the". Drop seeds that cannot be a
+      // completion of `typed` and let the word list below do the completing instead.
+      const t = typed.toLowerCase();
+      seeds = seeds.filter((s) => s.word.toLowerCase().startsWith(t));
+    }
+    if (seeds.length === 0) return this.topUpFromWordlist([], typed, k);
 
     // Rank every candidate - a single word OR a multi-word phrase - by EXPECTED KEYSTROKES
     // SAVED, then order the whole menu to maximise its expected return (below). P(the user
@@ -661,6 +670,28 @@ export class EngineCore {
         shown.add(w);
         out.push({ insert: w, display: w, kind: "word", score: 1e-6 / (out.length + 1) });
       }
+    }
+    return out;
+  }
+
+  /**
+   * Fill empty menu slots with dictionary words that start with what was typed.
+   *
+   * Two callers: a menu the LM under-filled, and a menu the LM could not seed AT ALL - which
+   * is the normal case when the bundled LM is English and the user is typing Ukrainian. The
+   * word list is the only component that knows the user's language, so it has to be able to
+   * answer on its own rather than only topping up someone else's answer.
+   */
+  private topUpFromWordlist(out: SuggestItem[], typed: string, k: number): SuggestItem[] {
+    if (!typed || out.length >= k) return out;
+    const shown = new Set(out.map((i) => i.insert.toLowerCase()));
+    shown.add(typed.toLowerCase());
+    for (const w of this.wordOracle.completions(typed, k - out.length + 4)) {
+      if (out.length >= k) break;
+      if (shown.has(w) || this.blockedSurface(w)) continue;
+      shown.add(w);
+      // Ordered by the oracle (shortest first); keep them below any genuine prediction.
+      out.push({ insert: w, display: w, kind: "word", score: 1e-6 / (out.length + 1) });
     }
     return out;
   }
