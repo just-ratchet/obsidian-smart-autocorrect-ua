@@ -332,10 +332,17 @@ def main():
 
     step0 = ck["step"] if ck else 0
     ep0 = ck["epoch"] if ck else 0
+    best_saved = [ck.get("ppl", float("inf")) if ck else float("inf")]
     for ep in range(ep0, ep0 + a.epochs):
         model.train()
         state = None
+        # `run/seen` is the rolling 100-step window; `cum/cum_n` is the whole epoch.
+        # Both are shown because they answer different questions: the window says what the
+        # model is doing NOW, the epoch mean says whether the run as a whole is improving.
+        # A window that drifts UP while the epoch mean stays flat is the early signature of
+        # the weights being eaten (see --wd) - invisible if only one of the two is printed.
         t0, run, seen, step = time.time(), 0.0, 0, 0
+        cum, cum_n, best = 0.0, 0, float("inf")
         for x, y, cs, i, n in batches(ids, cases, a.bs, a.bptt, dev):
             opt.zero_grad(set_to_none=True)
             amp = torch.amp.autocast(dev, dtype=torch.bfloat16) if dev == "cuda" else nullcontext()
@@ -354,24 +361,39 @@ def main():
                 [p for n, p in model.named_parameters() if not n.startswith("lstm.")], a.clip)
             opt.step()
 
-            run += loss_w.item(); seen += 1; step += 1
+            lw = loss_w.item()
+            run += lw; seen += 1; step += 1
+            cum += lw; cum_n += 1
             if step % 100 == 0:
-                ppl = math.exp(min(20, run / seen))
+                ppl100 = math.exp(min(20, run / seen))
+                pplEp = math.exp(min(20, cum / cum_n))
+                best = min(best, ppl100)
                 done = i / n
                 el = time.time() - t0
                 eta = el / max(done, 1e-9) - el
-                print(f"\r  ep{ep} {done*100:5.1f}% | step {step:,} | ppl {ppl:7.2f} | "
+                # "!" marks the window drifting well above its own best - the thing to watch for.
+                warn = " !" if ppl100 > best * 1.5 else "  "
+                print(f"\r  ep{ep} {done*100:5.1f}% | step {step:,} | ppl now {ppl100:8.2f}{warn}"
+                      f"| epoch {pplEp:8.2f} | best {best:7.2f} | "
                       f"{el/60:.0f}m elapsed, {eta/60:.0f}m left   ", end="", flush=True)
                 run, seen = 0.0, 0
             if step % a.save_every == 0:
-                torch.save({"model": model.state_dict(), "opt": opt.state_dict(),
-                            "vocab": vocab, "epoch": ep, "step": step0 + step,
-                            "ppl": math.exp(min(20, loss_w.item())),
-                            "cfg": {"dim": model.dim, "hid": model.hid, "layers": model.layers}},
-                           a.ckpt)
+                snap = {"model": model.state_dict(), "opt": opt.state_dict(),
+                        "vocab": vocab, "epoch": ep, "step": step0 + step,
+                        "ppl": math.exp(min(20, cum / max(cum_n, 1))),
+                        "cfg": {"dim": model.dim, "hid": model.hid, "layers": model.layers}}
+                torch.save(snap, a.ckpt)
+                # Keep a separate copy of the best epoch-mean seen. The rolling checkpoint is
+                # overwritten unconditionally, so a run that degrades late would otherwise
+                # leave nothing but its own worst weights to resume from.
+                if snap["ppl"] < best_saved[0]:
+                    best_saved[0] = snap["ppl"]
+                    torch.save(snap, str(Path(a.ckpt).with_name(Path(a.ckpt).stem + "_best.pt")))
             if a.max_steps and step >= a.max_steps:
                 break
         print()
+        print(f"  epoch {ep} done: mean ppl {math.exp(min(20, cum / max(cum_n,1))):.2f}, "
+              f"best 100-step window {best:.2f}")
         torch.save({"model": model.state_dict(), "opt": opt.state_dict(), "vocab": vocab,
                     "epoch": ep + 1, "step": step0 + step, "ppl": math.exp(min(20, loss_w.item())),
                     "cfg": {"dim": model.dim, "hid": model.hid, "layers": model.layers}}, a.ckpt)
