@@ -323,10 +323,11 @@ def main():
     if ck and "opt" in ck:
         try: opt.load_state_dict(ck["opt"])
         except Exception as e: print(f"  (fresh optimiser: {e})")
-    # NO GradScaler: it exists for float16's narrow exponent range. bfloat16 has the same
-    # range as fp32, so scaling buys nothing - and measured, scaler+bf16 left the LSTM gates
-    # at init scale (weight_ih absmax 0.067 vs 0.34 without it) while the embedding trained
-    # fine, which is exactly the "unigram perplexity, no recurrence" failure.
+    # GradScaler is dropped because bfloat16 has fp32's exponent range, so scaling is a
+    # no-op - NOT because it caused the divergence (measured: with scaler at lr 2e-3 the
+    # 400-step probe reached ppl 462, without it 791; the difference there was the lr).
+    # The real fix for "ppl 1077 and rising across epochs" is lr 1e-3 with weight_decay 0;
+    # see --lr. Short probes do not expose divergence - the failure appeared at 64k steps.
     Path(a.ckpt).parent.mkdir(parents=True, exist_ok=True)
 
     step0 = ck["step"] if ck else 0
