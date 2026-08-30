@@ -34,6 +34,7 @@ USAGE
   python train_lstm.py --resume ckpt/lstm.pt --export-only --out word_lstm.bin
 """
 import argparse, os, re, struct, sys, time, json, math, unicodedata
+from contextlib import nullcontext
 from collections import Counter
 from pathlib import Path
 
@@ -264,7 +265,16 @@ def main():
     ap.add_argument("--layers", type=int, default=2)
     ap.add_argument("--bs", type=int, default=64)
     ap.add_argument("--bptt", type=int, default=64)
-    ap.add_argument("--lr", type=float, default=2e-3)
+    ap.add_argument("--lr", type=float, default=1e-3)
+    # MEASURED, do not "fix" upward: boosting the gate lr makes it WORSE, not better
+    # (800 steps, same slice: mult 1 -> ppl 359, mult 5 -> 795, mult 10 -> 898). The gates
+    # get a smaller gradient than the embedding by design; Adam already rescales per
+    # parameter, so an extra multiplier just destabilises the recurrence.
+    ap.add_argument("--lstm-lr-mult", type=float, default=1.0,
+                    help="lr multiplier for the LSTM gates (1.0 measured best)")
+    ap.add_argument("--clip", type=float, default=1.0)
+    ap.add_argument("--clip-lstm", type=float, default=1.0)
+    ap.add_argument("--wd", type=float, default=0.0)
     ap.add_argument("--epochs", type=int, default=1)
     ap.add_argument("--case-weight", type=float, default=0.3)
     ap.add_argument("--save-every", type=int, default=2000)
@@ -302,11 +312,21 @@ def main():
     print(f"model: V={len(vocab):,} dim={model.dim} hid={model.hid} layers={model.layers} "
           f"({sum(p.numel() for p in model.parameters())/1e6:.1f}M params)")
 
-    opt = torch.optim.AdamW(model.parameters(), lr=a.lr)
+    # Separate groups exist so --lstm-lr-mult can be explored; it is 1.0 by default because
+    # anything higher measurably hurt (see the flag).
+    lstm_p = list(model.lstm.parameters())
+    lstm_ids = {id(p) for p in lstm_p}
+    rest_p = [p for p in model.parameters() if id(p) not in lstm_ids]
+    opt = torch.optim.AdamW(
+        [{"params": rest_p, "lr": a.lr},
+         {"params": lstm_p, "lr": a.lr * a.lstm_lr_mult}], weight_decay=a.wd)
     if ck and "opt" in ck:
         try: opt.load_state_dict(ck["opt"])
         except Exception as e: print(f"  (fresh optimiser: {e})")
-    scaler = torch.amp.GradScaler(dev) if dev == "cuda" else None
+    # NO GradScaler: it exists for float16's narrow exponent range. bfloat16 has the same
+    # range as fp32, so scaling buys nothing - and measured, scaler+bf16 left the LSTM gates
+    # at init scale (weight_ih absmax 0.067 vs 0.34 without it) while the embedding trained
+    # fine, which is exactly the "unigram perplexity, no recurrence" failure.
     Path(a.ckpt).parent.mkdir(parents=True, exist_ok=True)
 
     step0 = ck["step"] if ck else 0
@@ -317,21 +337,21 @@ def main():
         t0, run, seen, step = time.time(), 0.0, 0, 0
         for x, y, cs, i, n in batches(ids, cases, a.bs, a.bptt, dev):
             opt.zero_grad(set_to_none=True)
-            with torch.amp.autocast(dev, dtype=torch.bfloat16) if dev == "cuda" else torch.no_grad():
+            amp = torch.amp.autocast(dev, dtype=torch.bfloat16) if dev == "cuda" else nullcontext()
+            with amp:
                 h, state = model(x, state)
                 loss_w = F.cross_entropy(model.logits(h).view(-1, model.V), y.reshape(-1))
                 loss_c = F.cross_entropy(model.case_logits(h, y).view(-1, N_CASE), cs.reshape(-1))
                 loss = loss_w + a.case_weight * loss_c
             state = tuple(s.detach() for s in state)        # truncated BPTT
-            if scaler:
-                scaler.scale(loss).backward()
-                scaler.unscale_(opt)
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-                scaler.step(opt); scaler.update()
-            else:
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-                opt.step()
+            loss.backward()
+            # Clip the recurrent path on its own budget. Under one global clip the embedding
+            # gradient (measured ~50x the gate gradient) sets the scale factor and the gates
+            # get shrunk with it, so they never leave their init scale.
+            torch.nn.utils.clip_grad_norm_(model.lstm.parameters(), a.clip_lstm)
+            torch.nn.utils.clip_grad_norm_(
+                [p for n, p in model.named_parameters() if not n.startswith("lstm.")], a.clip)
+            opt.step()
 
             run += loss_w.item(); seen += 1; step += 1
             if step % 100 == 0:
