@@ -114,9 +114,9 @@ test("a line holding only a list/quote marker capitalises its first word", () =>
 
 test("dotted abbreviations don't capitalise the following word", () => {
   // The whole abbreviation is the last token here (its letters are typed as one run).
-  assert.equal(shouldCapitalizeNext("w.r.t. ", cfg), false);
+  assert.equal(shouldCapitalizeNext("т.д. ", cfg), false);
   assert.equal(shouldCapitalizeNext("e.g. ", cfg), false);
-  assert.equal(shouldCapitalizeNext("a.k.a. ", cfg), false);
+  assert.equal(shouldCapitalizeNext("т.зв. ", cfg), false);
   assert.equal(shouldCapitalizeNext("etc. ", cfg), false);
   // A genuine sentence end still capitalises.
   assert.equal(shouldCapitalizeNext("done. ", cfg), true);

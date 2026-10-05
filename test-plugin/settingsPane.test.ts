@@ -53,7 +53,7 @@ function component(kind) {
 `;
 
 const ENTRY = `
-export { buildPredictiveSettingGroups, DEFAULT_PREDICTIVE_SETTINGS } from "../src/predictive/PredictiveSettings.ts";
+export { buildPredictiveSettingGroups, DEFAULT_PREDICTIVE_SETTINGS, mergeSettings } from "../src/predictive/PredictiveSettings.ts";
 export { toSettingDefinitions, renderPaneGroups } from "../src/predictive/settingsPane.ts";
 export { TUTORIAL_STEPS } from "../src/predictive/TutorialModal.ts";
 export { t } from "../src/predictive/i18n.ts";
@@ -85,6 +85,7 @@ async function loadPane() {
   return (await import(pathToFileURL(out).href)) as {
     buildPredictiveSettingGroups: (...a: unknown[]) => PaneGroup[];
     DEFAULT_PREDICTIVE_SETTINGS: Record<string, unknown>;
+    mergeSettings: (saved?: Record<string, unknown>) => Record<string, unknown>;
     toSettingDefinitions: (g: PaneGroup[]) => Definition[];
     Setting: new (el: unknown) => StubSetting;
     TUTORIAL_STEPS: { title: string; body: string; image?: string }[];
@@ -143,12 +144,12 @@ test("a row's control still reads and writes the settings object", async () => {
 
   const row = groups
     .flatMap((g) => g.items)
-    .find((i) => i.kind === "row" && i.row!.name.startsWith("Predictive text"))?.row;
+    .find((i) => i.kind === "row" && i.row!.name.startsWith("Передбачення тексту"))?.row;
   assert.ok(row, "the predictive-text row disappeared from the pane");
 
   const s = new Setting(null);
   row.apply(s, true);
-  assert.equal(s.name.startsWith("Predictive text"), true);
+  assert.equal(s.name.startsWith("Передбачення тексту"), true);
   assert.equal(s.controls.length, 1, "the row lost its control");
   assert.equal(s.controls[0].value, true, "the toggle did not read the current setting");
 
@@ -232,4 +233,20 @@ test("with Obsidian in Ukrainian, every visible settings string is Ukrainian", a
     const english = seen.filter((x) => x.trim() && !NOT_PROSE.has(x) && !CYRILLIC.test(x));
     assert.deepEqual(english, [], "these settings strings are still English in a Ukrainian UI");
   });
+});
+
+test("settings saved by an earlier version survive the upgrade", async () => {
+  const pane = await loadPane();
+  const defaults = pane.DEFAULT_PREDICTIVE_SETTINGS;
+  const flip = (k: string) => (typeof defaults[k] === "boolean" ? !defaults[k] : defaults[k]);
+  // A user who changed two options, plus a key from an option this version no longer has.
+  const saved = { enablePredictions: flip("enablePredictions"), filterProfanity: flip("filterProfanity"), removedEnglishOption: "x" };
+  const merged = pane.mergeSettings(saved);
+  assert.equal(merged.enablePredictions, saved.enablePredictions, "a changed value is kept");
+  assert.equal(merged.filterProfanity, saved.filterProfanity, "a changed value is kept");
+  assert.equal(merged.pluginEnabled, defaults.pluginEnabled, "an untouched option takes its default");
+  assert.deepEqual(Object.keys(defaults).filter((k) => !(k in merged)), [], "no default key is lost");
+  // First run, or an empty/missing data.json: exactly the defaults.
+  assert.deepEqual(pane.mergeSettings(undefined), defaults);
+  assert.deepEqual(pane.mergeSettings({}), defaults);
 });

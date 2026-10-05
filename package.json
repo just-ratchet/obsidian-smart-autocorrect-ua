@@ -1,7 +1,7 @@
 {
-  "name": "smart-autocorrect",
+  "name": "smart-autocorrect-ua",
   "version": "0.1.2",
-  "description": "On-device predictive text, autocorrect and link suggestions for Obsidian, powered by a local neural language model.",
+  "description": "Українські підказки наступного слова, виправлення одруківок і підказки посилань для Obsidian на локальній мовній моделі.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
@@ -21,9 +21,11 @@
     "predictive-text",
     "autocomplete",
     "offline",
-    "language-model"
+    "language-model",
+    "ukrainian",
+    "українська"
   ],
-  "author": "Zangeti",
+  "author": "just-ratchet",
   "license": "MIT",
   "devDependencies": {
     "@codemirror/commands": "^6.10.4",
@@ -41,6 +43,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Zangeti/obsidian-smart-autocorrect.git"
+    "url": "https://github.com/just-ratchet/obsidian-smart-autocorrect-ua.git"
   }
 }

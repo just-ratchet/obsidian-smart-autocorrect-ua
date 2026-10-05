@@ -31,6 +31,7 @@ import { TutorialModal } from "./TutorialModal";
 import { ConfirmModal } from "./ConfirmModal";
 import {
   DEFAULT_PREDICTIVE_SETTINGS,
+  mergeSettings,
   buildPredictiveSettingGroups,
   type AccelerationState,
   type PredictiveSettings,
@@ -93,7 +94,7 @@ export class PredictiveFeature {
     engagement?: Partial<EngagementState>,
   ) {
     this.plugin = plugin;
-    this.settings = { ...DEFAULT_PREDICTIVE_SETTINGS, ...(settings ?? {}) };
+    this.settings = mergeSettings(settings);
     this.store = new PersonalizationStore(plugin, this.settings.beta);
     this.engine = new PredictiveEngineController(plugin.app, this.settings, this.store);
     this.engagement = new EngagementStore(engagement);
