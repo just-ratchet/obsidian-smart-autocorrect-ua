@@ -42,8 +42,10 @@ function component(kind) {
   c.getValue = () => c.value;
   c.onChange = (h) => { c.handler = h; return c; };
   c.onClick = (h) => { c.handler = h; return c; };
-  c.setLimits = () => c; c.setDynamicTooltip = () => c; c.setPlaceholder = () => c;
-  c.addOptions = (o) => { c.options = o; return c; };
+  c.setLimits = () => c; c.setDynamicTooltip = () => c; c.setPlaceholder = (v) => { c.placeholder = v; return c; };
+  c.addOptions = (o) => { c.options = { ...(c.options || {}), ...o }; return c; };
+  c.addOption = (k, v) => { c.options = { ...(c.options || {}), [k]: v }; return c; };
+  c.buttonEl = { addClass() {} };
   c.setButtonText = (t) => { c.text = t; return c; };
   c.setCta = () => c; c.setWarning = () => c; c.setDisabled = () => c; c.setTooltip = () => c;
   return c;
@@ -54,6 +56,7 @@ const ENTRY = `
 export { buildPredictiveSettingGroups, DEFAULT_PREDICTIVE_SETTINGS } from "../src/predictive/PredictiveSettings.ts";
 export { toSettingDefinitions, renderPaneGroups } from "../src/predictive/settingsPane.ts";
 export { TUTORIAL_STEPS } from "../src/predictive/TutorialModal.ts";
+export { t } from "../src/predictive/i18n.ts";
 export { TUTORIAL_IMAGES } from "../src/predictive/tutorialImages.ts";
 export { Setting } from "obsidian";
 `;
@@ -156,7 +159,8 @@ test("a row's control still reads and writes the settings object", async () => {
 
 interface StubSetting {
   name: string;
-  controls: { value: unknown; handler?: (v: unknown) => void }[];
+  desc: string;
+  controls: { value: unknown; handler?: (v: unknown) => void; text?: string; placeholder?: string; options?: Record<string, string> }[];
 }
 
 test("the getting-started tour stays short and every picture slot exists", async () => {
@@ -166,9 +170,66 @@ test("the getting-started tour stays short and every picture slot exists", async
   // Four steps is the design: a tour people click through without reading teaches nothing.
   assert.ok(steps.length >= 3 && steps.length <= 5, `${steps.length} steps is too many to read`);
   for (const s of steps) {
-    assert.notEqual(s.title.trim(), "", "a tour step lost its title");
-    assert.ok(s.body.length <= 200, `"${s.title}" runs to ${s.body.length} chars; keep it to a sentence`);
+    // Steps hold message KEYS (so the language is resolved at render time, not import time).
+    const title = pane.t(s.titleKey);
+    const body = pane.t(s.bodyKey);
+    assert.notEqual(title.trim(), "", "a tour step lost its title");
+    assert.notEqual(title, s.titleKey, "a tour step title has no message");
+    assert.ok(body.length <= 200, `"${title}" runs to ${body.length} chars; keep it to a sentence`);
     if (s.image)
-      assert.ok(s.image in pane.TUTORIAL_IMAGES, `"${s.title}" points at a picture slot that does not exist`);
+      assert.ok(s.image in pane.TUTORIAL_IMAGES, `"${title}" points at a picture slot that does not exist`);
   }
+});
+
+/** Run `fn` as if Obsidian were set to Ukrainian (the plugin reads localStorage["language"]). */
+async function withUkrainianUi<T>(fn: () => Promise<T>): Promise<T> {
+  const g = globalThis as unknown as { window?: unknown };
+  const before = g.window;
+  g.window = { localStorage: { getItem: (k: string) => (k === "language" ? "uk" : null) } };
+  try {
+    return await fn();
+  } finally {
+    g.window = before;
+  }
+}
+
+const CYRILLIC = /[А-Яа-яІіЇїЄєҐґ]/;
+/** Strings that are legitimately not words: key names, file names, glob/path examples. */
+const NOT_PROSE = new Set(["Tab", "Enter", "End", "Templates\nJournal/*", "predictive-personalization.json"]);
+
+test("with Obsidian in Ukrainian, every visible settings string is Ukrainian", async () => {
+  await withUkrainianUi(async () => {
+    const pane = await loadPane();
+    const { Setting } = pane;
+    const settings = { ...pane.DEFAULT_PREDICTIVE_SETTINGS } as Record<string, unknown>;
+    // The pane needs the personalization/acceleration hooks to render its full set of rows.
+    const personalization = {
+      getStats: () => ({ charsSaved: 1234, minutesSaved: 7, streak: 3, bestStreak: 5, accepts: 1, corrections: 2, reverts: 3, learnListSize: 4 }),
+      onOpenTutorial() {}, onResetSettings() {}, onFactoryReset() {}, onOpenStats() {}, onResetStats() {},
+      onOpenDictionary() {}, onExport() {}, onImport() {}, onReset() {},
+    };
+    const accel = { reload: async () => {}, status: async () => ({ lstmLoaded: true, accelerated: true }), missingAssets: async () => 2, installAssets: async () => true };
+    const groups = pane.buildPredictiveSettingGroups(settings, () => {}, personalization, () => {}, accel, { missing: 2 });
+
+    const seen: string[] = [];
+    for (const g of groups) {
+      if (g.heading) seen.push(g.heading);
+      for (const item of g.items as unknown as { kind: string; text?: string; row?: { name: string; desc: string; apply: (s: unknown, w: boolean) => void } }[]) {
+        if (item.kind === "note" && item.text) seen.push(item.text);
+        if (item.kind !== "row" || !item.row) continue;
+        const st = new Setting(null);
+        item.row.apply(st, true);
+        seen.push(st.name);
+        if (st.desc) seen.push(st.desc);
+        for (const c of st.controls) {
+          if (c.text) seen.push(c.text);
+          if (c.placeholder) seen.push(c.placeholder);
+          for (const label of Object.values(c.options ?? {})) seen.push(label);
+        }
+      }
+    }
+    assert.ok(seen.length > 100, `expected the whole pane, only saw ${seen.length} strings`);
+    const english = seen.filter((x) => x.trim() && !NOT_PROSE.has(x) && !CYRILLIC.test(x));
+    assert.deepEqual(english, [], "these settings strings are still English in a Ukrainian UI");
+  });
 });

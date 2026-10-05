@@ -21,8 +21,10 @@ const SPECIAL: Record<string, string> = {
 export function foldDiacritics(s: string): string {
   let out = s.toLowerCase();
   out = out.replace(/[ßæœøđłþ]/g, (c) => SPECIAL[c] ?? c);
-  // Decompose and strip combining marks.
-  return out.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  // Decompose and strip combining marks - but NEVER from Cyrillic. NFD splits "й" into "и" + a
+  // breve and "ї" into "і" + a diaeresis, so folding them would make "мій" and "миі" the same
+  // word and "їжак" match "іжак". In Ukrainian those marks are part of the letter, not an accent.
+  return out.replace(/[^Ѐ-ӿ]+/g, (run) => run.normalize("NFD").replace(/[̀-ͯ]/g, ""));
 }
 
 function undouble(w: string): string {

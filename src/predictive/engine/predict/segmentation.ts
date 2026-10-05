@@ -10,6 +10,7 @@
  */
 import type { LanguageModel } from "../ngram/model.ts";
 import { phoneticKey, phoneticCost } from "../channel/phonetic.ts";
+import { isFragmentPiece } from "../text/letters.ts";
 
 export interface Segmentation {
   words: string[];
@@ -33,7 +34,7 @@ export function segment(
     for (let j = Math.max(0, i - 20); j < i; j++) {
       if (best[j] === -Infinity) continue;
       const piece = t.slice(j, i);
-      if (piece.length < minLen && !(piece === "a" || piece === "i")) continue;
+      if (piece.length < minLen && isFragmentPiece(piece)) continue;
       // penalise unknown pieces so we don't over-split into gibberish.
       const lp = model.hasWord(piece)
         ? model.logProb(piece, [])
@@ -100,7 +101,7 @@ export function suggestSplit(
   const seg = segment(t, model);
   if (seg.words.length < 2) return null;
   if (seg.words.some((w) => !model.hasWord(w))) return null;
-  if (seg.words.some((w) => w.length === 1 && w !== "a" && w !== "i")) return null;
+  if (seg.words.some((w) => isFragmentPiece(w))) return null;
   const whole = model.logProb(t, context);
   if (sequenceLogProb(model, seg.words, context) > whole + margin) return seg.words;
   return null;

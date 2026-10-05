@@ -78,9 +78,11 @@ export class TutorialModal extends Modal {
       const keys = root.createDiv({ cls: "sa-tut-keys" });
       s.keys.forEach((k, i) => {
         if (i > 0) keys.createSpan({ cls: "sa-tut-plus", text: "+" });
-        keys.createEl("kbd", { text: k });
+        keys.createEl("kbd", { text: k === "Space" ? t("key.space") : k });
       });
     }
+
+    if (s.image === "stats") this.renderStatsDemo(root);
 
     const src = s.image ? TUTORIAL_IMAGES[s.image] : undefined;
     if (src) {
@@ -106,6 +108,21 @@ export class TutorialModal extends Modal {
         .setCta()
         .onClick(() => this.go(1)),
     );
+  }
+
+  /** A live miniature of the stats dashboard with sample numbers, in the user's language. */
+  private renderStatsDemo(root: HTMLElement): void {
+    const demo = root.createDiv({ cls: "smart-autocorrect-stats sa-tut-statdemo" });
+    const cards = demo.createDiv({ cls: "sa-stat-cards" });
+    const card = (value: string, label: string) => {
+      const c = cards.createDiv({ cls: "sa-stat-card" });
+      c.createDiv({ cls: "sa-stat-value", text: value });
+      c.createDiv({ cls: "sa-stat-label", text: label });
+    };
+    card((1334).toLocaleString(), t("stats.keystrokesSaved"));
+    card(t("time.minutes", { n: 7 }), t("stats.timeSaved"));
+    card(t("stats.days", { n: 3 }), t("stats.currentStreak"));
+    demo.createEl("p", { cls: "sa-stat-sub", text: t("stats.sub", { today: (722).toLocaleString(), best: 3 }) });
   }
 
   onClose(): void {

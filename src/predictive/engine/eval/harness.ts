@@ -31,9 +31,12 @@ export function rng(seed: number): () => number {
 }
 
 const QWERTY = "qwertyuiopasdfghjklzxcvbnm";
+const JCUKEN = "йцукенгшщзхїґфівапролджєячсмитьбю";
 
 function adjacentKey(ch: string, rand: () => number, layout: KeyboardLayoutName): string {
-  const candidates = QWERTY.split("").filter((k) => k !== ch && keyDistance(ch, k, layout) <= 1.2);
+  // A Cyrillic letter slips to a neighbour on the ЙЦУКЕН keyboard, a Latin one on the Latin layout.
+  const keys = /[Ѐ-ӿ]/.test(ch) ? JCUKEN : QWERTY;
+  const candidates = keys.split("").filter((k) => k !== ch && keyDistance(ch, k, layout) <= 1.2);
   if (candidates.length === 0) return ch;
   return candidates[Math.floor(rand() * candidates.length)];
 }
@@ -47,7 +50,7 @@ export interface CorruptOptions {
 /** Inject a single realistic typo into `word` with probability errorRate. */
 export function corrupt(word: string, rand: () => number, opts: CorruptOptions = {}): string {
   const errorRate = opts.errorRate ?? 1.0;
-  const layout = opts.layout ?? "qwerty";
+  const layout = opts.layout ?? "uk";
   if (word.length < 2 || rand() > errorRate) return word;
   const i = Math.floor(rand() * word.length);
   const roll = rand();

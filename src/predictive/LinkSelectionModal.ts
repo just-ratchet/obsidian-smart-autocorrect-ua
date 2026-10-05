@@ -14,6 +14,7 @@ import { segmentText } from "./engine/index";
 import { LinkChooser } from "./LinkChooser";
 import type { RelatedCandidate, RelatedIndex } from "./RelatedIndex";
 import type { PredictiveSettings } from "./PredictiveSettings";
+import { t } from "./i18n";
 
 /** How many RANKED recommendations to compute for an explicit ask. */
 const MAX_CANDIDATES = 12;
@@ -64,10 +65,8 @@ export async function openLinkSelection(opts: {
   chooser.open({
     candidates: all,
     preferredTop,
-    title: selection ? `Link “${truncate(selection)}” to…` : "Link to…",
-    hint: selection
-      ? "Your selected text stays as the link's text."
-      : "Tip: select text first to link just that phrase.",
+    title: selection ? t("link.titleSel", { sel: truncate(selection) }) : t("link.title"),
+    hint: selection ? t("link.hintSel") : t("link.hintNoSel"),
     onChoose: (c) => {
       const dest = c.heading ? `${c.display}#${c.heading}` : c.display;
       const alias = selection && selection !== dest ? `|${selection}` : "";

@@ -9,6 +9,7 @@
  * typing speed.
  */
 
+import { t } from "./i18n";
 /** Average typing speed used to turn saved characters into saved minutes (~40 wpm). */
 const CHARS_PER_MINUTE = 200;
 
@@ -107,14 +108,14 @@ export class EngagementStore {
   /** Compact status-bar label, e.g. "⌨️ 1,240 saved · 🔥 6d". */
   statusText(): string {
     const n = this.s.totalSaved.toLocaleString();
-    const streak = this.s.streak > 1 ? ` · 🔥 ${this.s.streak}d` : "";
-    return `⌨️ ${n} saved${streak}`;
+    const streak = this.s.streak > 1 ? t("statusBar.streak", { n: this.s.streak }) : "";
+    return t("statusBar.text", { n, streak });
   }
 
   /** Human "time saved" string, e.g. "≈ 3.2 hrs" or "≈ 14 min". */
   timeSavedText(): string {
     const mins = this.minutesSaved;
-    if (mins >= 60) return `≈ ${(mins / 60).toFixed(1)} hrs`;
-    return `≈ ${Math.round(mins)} min`;
+    if (mins >= 60) return `≈ ${t("time.hours", { n: (mins / 60).toFixed(1) })}`;
+    return `≈ ${t("time.minutes", { n: Math.round(mins) })}`;
   }
 }

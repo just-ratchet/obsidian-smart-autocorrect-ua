@@ -14,6 +14,7 @@ import { termFreq } from "./engine/index";
 import type { LinkIndex } from "./LinkIndex";
 import type { PredictiveEngineController } from "./PredictiveEngineController";
 import type { PredictiveSettings } from "./PredictiveSettings";
+import { t } from "./i18n";
 
 interface TagItem {
   tag: string;
@@ -170,7 +171,7 @@ export class TagSuggest extends EditorSuggest<TagItem> {
   renderSuggestion(item: TagItem, el: HTMLElement): void {
     el.addClass("smart-autocorrect-tag-suggestion");
     el.createSpan({ cls: "sa-tag-name", text: `#${item.tag}` });
-    el.createSpan({ cls: "sa-tag-meta", text: item.isNew ? "new tag" : `used in ${item.count} note${item.count === 1 ? "" : "s"}` });
+    el.createSpan({ cls: "sa-tag-meta", text: item.isNew ? t("tag.new") : t("tag.usedIn", { count: item.count }) });
   }
 
   selectSuggestion(item: TagItem): void {

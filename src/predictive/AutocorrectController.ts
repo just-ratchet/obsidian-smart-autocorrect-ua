@@ -27,11 +27,21 @@ import {
   currencyStyleFor,
   fixNumericSuffix,
   fractionGlyph,
+  LETTERS,
+  APOSTROPHES,
+  WORD_AT_END,
   type SentenceCaseConfig,
 } from "./engine/index";
 import { contextWords } from "./context";
 import type { PredictiveEngineController } from "./PredictiveEngineController";
 import type { PredictiveSettings } from "./PredictiveSettings";
+
+// Word shapes for the boundary handler. Letters are Latin + Ukrainian (see engine/text/letters.ts);
+// a word may contain apostrophes (м'яч, п’ять, пʼять) and hyphens (по-українськи).
+const SINGLE_LETTER = new RegExp(`^[${LETTERS}]$`);
+const PREV_WORD_SPACES = new RegExp(`([${LETTERS}][${LETTERS}${APOSTROPHES}-]*)\\s*$`);
+const PREV_WORD_ONE_SPACE = new RegExp(`([${LETTERS}][${LETTERS}${APOSTROPHES}-]*) $`);
+const ABBREV_BEFORE_DOT = new RegExp(`([${LETTERS}][${LETTERS}.]*)\\.\\s+$`);
 
 const BOUNDARY_KEYS = new Set([" ", "Enter", ".", ",", ";", ":", "!", "?"]);
 
@@ -382,7 +392,7 @@ export class AutocorrectController {
     // Fraction glyphs ("1/2" → "½"), also no letter token of their own.
     if (this.tryFraction(editor, cursor, uptoToken)) return;
 
-    const tokenMatch = uptoToken.match(/([A-Za-zА-Яа-яЇїІіЄєҐґ][A-Za-zА-Яа-яЇїІіЄєҐґ'’-]*)$/);
+    const tokenMatch = uptoToken.match(WORD_AT_END);
     if (!tokenMatch) return;
 
     const token = tokenMatch[1];
@@ -393,6 +403,8 @@ export class AutocorrectController {
     // ("19th", "3rd", "1/16th", "5km", "3pm"). The token regex only captures the letters, so
     // without this we'd "correct" the "th" of "19th" into "the". Leave it exactly as typed.
     if (tokenStartCh > 0 && /\d/.test(uptoToken[tokenStartCh - 1])) return;
+    // Ukrainian ordinals hang off the number with a hyphen: "5-й", "21-го", "1-ша", "3-тя".
+    if (tokenStartCh > 1 && uptoToken[tokenStartCh - 1] === "-" && /\d/.test(uptoToken[tokenStartCh - 2])) return;
 
     // Personal dictionary: the SPELLING is correct as written, so no spelling correction and no
     // proper-noun re-casing. But "pinned spelling" was never meant to mean "exempt from the
@@ -410,24 +422,16 @@ export class AutocorrectController {
     // handler sees each letter as its own token, so capitalising them is what turned "w.r.t."
     // into "W.R.T." and, on the trailing SPACE, "e.g." into "e.G.". Leave such a letter EXACTLY
     // as typed, whatever the boundary character (space or the next dot).
-    if (/^[A-Za-z]$/.test(token) && (precedingText.endsWith(".") || before.slice(-1) === ".")) return;
+    if (SINGLE_LETTER.test(token) && (precedingText.endsWith(".") || before.slice(-1) === ".")) return;
 
-    // The pronoun "i" is always "I", including its contractions ("i'm" → "I'm", "i'll" → "I'll").
-    // Unambiguous, so it needs no model or word list - just the one rule. (Reaching here means it is
-    // a standalone word, not part of a dotted initialism like "e.g.".)
-    if (this.settings.autoCapitalize && (token === "i" || /^i'(m|ll|ve|d|re)$/i.test(token))) {
-      const capped = "I" + token.slice(1);
-      this.applyCorrection(editor, { line: cursor.line, ch: tokenStartCh }, { line: cursor.line, ch: tokenStartCh + token.length }, capped);
-      this.trackCorrection(token, capped);
-      this.justCorrected = true;
-      return;
-    }
+    // (Upstream capitalised the English pronoun "i" → "I" here. Dropped for Ukrainian: a lone Latin
+    // "i" in Ukrainian text is a mistyped Cyrillic "і" ("and"), and turning it into "I" is wrong.)
 
     // Accidental doubled word ("the the" -> "the"): if the word just typed duplicates the
     // one before it and is never validly doubled, delete this copy plus the space before it,
     // then stop (nothing to correct). Undoable with Ctrl/Cmd-Z like any edit.
     if (this.settings.removeDoubledWords) {
-      const prevMatch = precedingText.match(/([A-Za-z][A-Za-z'-]*)\s*$/);
+      const prevMatch = precedingText.match(PREV_WORD_SPACES);
       if (prevMatch && isDoubledWord(prevMatch[1], token)) {
         const prevWordEnd = tokenStartCh - (precedingText.length - precedingText.trimEnd().length);
         editor.replaceRange(
@@ -446,7 +450,7 @@ export class AutocorrectController {
     // word / contraction far likelier than the two apart. Checked before single-token correction
     // because a stray space is the more fundamental error.
     if (this.settings.autocorrectOnSpace) {
-      const prevMatch = precedingText.match(/([A-Za-z][A-Za-z'-]*) $/);
+      const prevMatch = precedingText.match(PREV_WORD_ONE_SPACE);
       if (prevMatch) {
         const prevTok = prevMatch[1];
         const prevStart = tokenStartCh - (prevTok.length + 1);
@@ -545,7 +549,7 @@ export class AutocorrectController {
       // The token before the full stop, INCLUDING dotted initialisms: "z.b." must capture
       // "z.b", not fail for having a single letter before its last dot. Those are exactly the
       // abbreviations that trip the capitaliser, so they are the ones that must be learnable.
-      const abbrevMatch = capOnly ? precedingText.match(/([A-Za-z][A-Za-z.]*)\.\s+$/) : null;
+      const abbrevMatch = capOnly ? precedingText.match(ABBREV_BEFORE_DOT) : null;
       this.trackCorrection(token, applied, abbrevMatch ? abbrevMatch[1].toLowerCase() : undefined);
       this.justCorrected = true;
       // Teach the confusion model only for genuine spelling corrections

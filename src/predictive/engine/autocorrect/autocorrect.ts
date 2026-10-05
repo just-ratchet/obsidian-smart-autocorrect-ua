@@ -17,6 +17,7 @@ import { type Candidate, type CandidateIndex, predict } from "../predict/predict
 import type { Reranker } from "../predict/reranker.ts";
 import { RealWordCorrector, sequenceLogProb, suggestSplit } from "../predict/segmentation.ts";
 import { fixContraction } from "../text/caseFix.ts";
+import { isFragmentPiece } from "../text/letters.ts";
 
 export interface AutocorrectConfig {
   /**
@@ -236,7 +237,9 @@ export function decideCorrection(
   // CORE is still all-caps, so it must be protected the same way (otherwise "CMOs"
   // gets "corrected" to a lowercase near-neighbour).
   const acronymCore = /s$/.test(typedToken) ? typedToken.slice(0, -1) : typedToken;
-  if (acronymCore.length >= 2 && acronymCore === acronymCore.toUpperCase() && /[A-Z]/.test(acronymCore))
+  // ("s" is the English plural; Ukrainian acronyms inflect by suffix - "ЗСУшники" - and are caught
+  // by the real-word / proper-noun guards instead.) Cyrillic capitals count: ЗСУ, НАТО, ДТП.
+  if (acronymCore.length >= 2 && acronymCore === acronymCore.toUpperCase() && /[A-ZА-ЩЬЮЯІЇЄҐ]/.test(acronymCore))
     return no("acronym");
 
   // 0. contraction failsafe (deterministic): "dont" -> "don't".
@@ -332,7 +335,7 @@ export function decideCorrection(
   // A non-word that was typed all-lowercase gets the cheaper gate (see NONWORD_IG_DISCOUNT): the
   // common case of a fast, obvious typo. A capitalised OOV token is left at the full bar - it is
   // more likely a proper noun the lexicon simply doesn't carry than a misspelling.
-  const nameLike = /[A-Z]/.test(typedToken);
+  const nameLike = /[A-ZА-ЩЬЮЯІЇЄҐ]/.test(typedToken);
   const igThreshold =
     !isReal && !nameLike
       ? (cfg.nonWordInfoGainThreshold ?? baseThreshold * NONWORD_IG_DISCOUNT)
@@ -374,7 +377,7 @@ const MAX_RESPACE_LENGTH = 24;
  * even though the model happily assigns those letters probabilities as tokens.
  */
 function isFragment(piece: string): boolean {
-  return piece.length === 1 && piece !== "a" && piece !== "i";
+  return isFragmentPiece(piece);
 }
 
 /**
@@ -400,6 +403,10 @@ export function decideRespace(
   const a = prev.toLowerCase();
   const b = cur.toLowerCase();
   if (a.length < 1 || b.length < 1) return null;
+  // A lone Ukrainian preposition/conjunction/pronoun (в, у, з, і, й, а, о, я) is a word in its own
+  // right and is followed by a space far more often than a stray one: "в ікно" ("into the window")
+  // is not a typo for "вікно", nor "з мінити" for "змінити". Never merge it into its neighbour.
+  if (a.length === 1 && /^[вузіїйаоя]$/.test(a)) return null;
   const joined = a + b;
   if (joined.length > MAX_RESPACE_LENGTH) return null;
   // Contraction failsafe: "havent"→"haven't", "youd"→"you'd". A curated join, so no margin needed.

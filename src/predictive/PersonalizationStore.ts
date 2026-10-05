@@ -103,7 +103,7 @@ export class PersonalizationStore {
     const p = normalizePath(vaultRelativePath);
     const adapter = this.plugin.app.vault.adapter;
     if (!(await adapter.exists(p))) {
-      new Notice(`No file at ${p}`);
+      new Notice(t("assets.noFile", { path: p }));
       return;
     }
     const raw: unknown = JSON.parse(await adapter.read(p));

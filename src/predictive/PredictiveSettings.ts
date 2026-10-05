@@ -4,7 +4,7 @@
  * matching the design.
  */
 import { PaneBuilder, renderPaneGroups } from "./settingsPane";
-import { t } from "./i18n";
+import { t, type MessageKey } from "./i18n";
 import type { PaneGroup } from "./settingsPane";
 import { parseExcludeList } from "./engine/index";
 import type { KeyboardLayoutName } from "./engine/index";
@@ -194,7 +194,7 @@ export interface PredictiveSettings {
   /** Thousands separator for currency amounts: "comma" → $1,000 ; "period" → 1.000 € ; "none" →
    *  $1000. The decimal mark and symbol side follow from it (comma/none = English style, symbol
    *  before; period = European style, symbol after). */
-  currencyThousands: "comma" | "period" | "none";
+  currencyThousands: "comma" | "period" | "space" | "none";
   /** Where the euro sign sits: "before" (€100) or "after" (100 €). Other currencies follow their
    *  own fixed convention; only the euro genuinely varies by locale. */
   currencyEuroPlacement: "before" | "after";
@@ -256,7 +256,7 @@ export const DEFAULT_PREDICTIVE_SETTINGS: PredictiveSettings = {
   modelPromptShown: false,
   tutorialShown: false,
   channelSigma: 1.0,
-  keyboardLayout: "qwerty",
+  keyboardLayout: "uk",
   maxEditCost: 4.0,
   autocorrectOnSpace: true,
   infoGainThreshold: 2.5,
@@ -298,7 +298,7 @@ export const DEFAULT_PREDICTIVE_SETTINGS: PredictiveSettings = {
   suggestAlternatives: true,
   currencyFormat: true,
   currencyWordToSymbol: true,
-  currencyThousands: "comma",
+  currencyThousands: "space", // 1 000,50 - the Ukrainian convention
   currencyEuroPlacement: "before",
   currencyUseCode: false,
   fractionGlyphs: false,
@@ -337,10 +337,10 @@ export function buildPredictiveSettingGroups(
   const row = () => b.row();
   const commit = () => void onChange();
   const bag = settings as unknown as Record<string, boolean>;
-  const toggle = (name: string, desc: string, key: keyof PredictiveSettings) =>
+  const toggle = (name: MessageKey, desc: MessageKey, key: keyof PredictiveSettings) =>
     row()
-      .setName(name)
-      .setDesc(desc)
+      .setName(t(name))
+      .setDesc(t(desc))
       .addToggle((t) =>
         t.setValue(bag[key as string]).onChange((v) => {
           bag[key as string] = v;
@@ -394,11 +394,11 @@ export function buildPredictiveSettingGroups(
       saved.createEl("strong", { text: `⌨️ ${topStats.charsSaved.toLocaleString()}` });
       const hrs =
         topStats.minutesSaved >= 60
-          ? `${(topStats.minutesSaved / 60).toFixed(1)} hrs`
-          : `${Math.round(topStats.minutesSaved)} min`;
-      saved.appendText(` keystrokes saved · ≈ ${hrs} of typing`);
+          ? t("time.hours", { n: (topStats.minutesSaved / 60).toFixed(1) })
+          : t("time.minutes", { n: Math.round(topStats.minutesSaved) });
+      saved.appendText(t("set.stats.line", { time: hrs }));
       if (topStats.streak > 1)
-        saved.appendText(` · 🔥 ${topStats.streak}-day streak (best ${topStats.bestStreak})`);
+        saved.appendText(t("set.stats.streak", { n: topStats.streak, best: topStats.bestStreak }));
     });
     // Support sits BETWEEN the headline number and the See/Reset-stats menu, so the
     // buy-me-a-coffee ask reads as part of the stats section rather than trailing after
@@ -461,10 +461,7 @@ export function buildPredictiveSettingGroups(
 
   row()
     .setName(t("ui.name.RemoveAccidentalDoubledWords"))
-    .setDesc(
-      'Delete a repeated function word as you type ("the the" → "the"). Only words that are ' +
-        'never validly doubled are touched, so "had had" and "that that" are left alone.',
-    )
+    .setDesc(t("set.doubled.desc"))
     .addToggle((t) =>
       t.setValue(settings.removeDoubledWords).onChange((v) => {
         settings.removeDoubledWords = v;
@@ -474,7 +471,7 @@ export function buildPredictiveSettingGroups(
 
   row()
     .setName(t("ui.name.AutoCapitaliseSentencesNames"))
-    .setDesc('Capitalises the start of a sentence (and leaves "U.S.", "e.g." and decimals alone), fixes "THe" → "The", and capitalises names like "london" → "London".')
+    .setDesc(t("set.autocap.desc"))
     .addToggle((t) =>
       t.setValue(settings.autoCapitalize).onChange((v) => {
         settings.autoCapitalize = v;
@@ -492,11 +489,7 @@ export function buildPredictiveSettingGroups(
       }),
     );
 
-  toggle(
-    "Suggest alternatives on right-click",
-    "Adds a “Suggest alternatives” item to the right-click menu, offering more eloquent, academic wording for the word you clicked.",
-    "suggestAlternatives",
-  );
+  toggle("set.alt.name", "set.alt.desc", "suggestAlternatives");
 
   row()
     .setName(t("ui.name.VaultInfluence"))
@@ -539,7 +532,7 @@ export function buildPredictiveSettingGroups(
 
   row()
     .setName(t("ui.name.WordsArenTSentenceEnds"))
-    .setDesc('Comma-separated abbreviations that should NOT trigger capitalisation after their period, e.g. "approx., dept.".')
+    .setDesc(t("set.abbr.desc"))
     .addTextArea((t) =>
       t
         .setValue(settings.extraAbbreviations.join(", "))
@@ -556,10 +549,7 @@ export function buildPredictiveSettingGroups(
     const count = settings.userDictionary.length;
     row()
       .setName(t("ui.name.PersonalDictionary"))
-      .setDesc(
-        `Words that are always correct as written, so they're never autocorrected or re-cased ` +
-          `(${count} word${count === 1 ? "" : "s"}). Open the manager to see, add, or remove them.`,
-      )
+      .setDesc(t("set.dict.desc", { count }))
       .addButton((b) => b.setButtonText(t("ui.btn.ManageDictionary")).onClick(() => personalization.onOpenDictionary()));
   }
 
@@ -618,7 +608,7 @@ export function buildPredictiveSettingGroups(
   b.note(t("ui.msg.EachMakesCorrectionsSmarterDifferent"));
   row()
     .setName(t("ui.name.KeyboardTypoStrength"))
-    .setDesc('How much nearby-key slips are trusted as typos ("teh" → "the"). Higher = more keyboard corrections; 0 = ignore keyboard geometry entirely.')
+    .setDesc(t("set.kbd.desc"))
     .addSlider((s) =>
       s
         .setLimits(0, 3, 0.1)
@@ -630,7 +620,7 @@ export function buildPredictiveSettingGroups(
     );
   row()
     .setName(t("ui.name.SoundAlikeStrength"))
-    .setDesc('How much sound-alike spellings are trusted, independent of keyboard distance ("fone" → "phone", "definately" → "definitely"). Higher = more phonetic corrections; 0 = off.')
+    .setDesc(t("set.sound.desc"))
     .addSlider((s) =>
       s
         .setLimits(0, 3, 0.1)
@@ -640,11 +630,11 @@ export function buildPredictiveSettingGroups(
           commit();
         }),
     );
-  toggle("Fix the wrong real word", 'Catches valid words used incorrectly in context ("form" → "from", "their" → "there").', "realWordCorrection");
-  toggle("Fix missing spaces", 'Splits run-together words ("alot" → "a lot", "thebank" → "the bank").', "splitCorrection");
-  toggle("Smarter context ranking", "Ranks words by how many contexts they appear in, not just raw frequency. Reins in over-eager rare words.", "useContinuation");
-  toggle("Adapt to my typing", "Learns the particular key mistakes you tend to make, and corrects them better over time.", "adaptiveKeyboard");
-  toggle("Rank by what I pick", "Reorders suggestions based on which ones you actually choose.", "learnedRanking");
+  toggle("set.realword.name", "set.realword.desc", "realWordCorrection");
+  toggle("set.split.name", "set.split.desc", "splitCorrection");
+  toggle("set.context.name", "set.context.desc", "useContinuation");
+  toggle("set.adapt.name", "set.adapt.desc", "adaptiveKeyboard");
+  toggle("set.rank.name", "set.rank.desc", "learnedRanking");
   row()
     .setName(t("ui.name.FavourWordsFromNote"))
     .setDesc(t("ui.desc.GivesSmallBoostWordsYou"))
@@ -688,7 +678,7 @@ export function buildPredictiveSettingGroups(
     .setName(t("ui.name.AcceptSuggestionWith"))
     .setDesc(t("ui.help.KeyInsertsHighlightedSuggestionKey"))
     .addDropdown((d) => {
-      for (const k of ACCEPT_KEYS) d.addOption(k, k === "ArrowRight" ? "Right arrow" : k);
+      for (const k of ACCEPT_KEYS) d.addOption(k, k === "ArrowRight" ? t("set.key.arrowRight") : k);
       d.setValue(settings.acceptKey).onChange((v) => {
         settings.acceptKey = v as AcceptKey;
         commit();
@@ -718,21 +708,14 @@ export function buildPredictiveSettingGroups(
   // --- convenience: small auto-formatting helpers ------------------------
   b.group(t("ui.msg.Formatting"), true);
   b.note(t("ui.msg.SmallFormattingHelpersTidyUp"));
-  toggle(
-    "Tidy currency amounts",
-    'Once you finish an amount that has a currency symbol, groups the thousands and moves the symbol to where that currency normally sits ("$1000" becomes "$1,000", "1000$" becomes "$1,000").',
-    "currencyFormat",
-  );
-  toggle(
-    "Currency words to symbols",
-    'After a number, turns a currency word or code into its symbol ("1000 euros" becomes "€1,000", "50 USD" becomes "$50"). You have to type the number for it to convert.',
-    "currencyWordToSymbol",
-  );
+  toggle("set.cur.name", "set.cur.desc", "currencyFormat");
+  toggle("set.curword.name", "set.curword.desc", "currencyWordToSymbol");
   row()
     .setName(t("ui.name.ThousandsSeparator"))
     .setDesc(t("ui.desc.WhichGroupingUseInsideCurrency"))
     .addDropdown((d) =>
       d
+        .addOption("space", t("set.opt.space"))
         .addOption("comma", t("ui.opt.Comma"))
         .addOption("period", t("ui.opt.Period"))
         .addOption("none", t("ui.opt.NoneSep"))
@@ -755,16 +738,8 @@ export function buildPredictiveSettingGroups(
           commit();
         }),
     );
-  toggle(
-    "Use ISO codes instead of symbols",
-    'Write the three-letter code after the number ("1,000 USD", "1,000 EUR") rather than the symbol. Distinguishes currencies that share a sign (USD vs CAD, JPY vs CNY).',
-    "currencyUseCode",
-  );
-  toggle(
-    "Fraction glyphs",
-    'Turn a typed fraction into its single character ("1/2" becomes "½", "3/4" becomes "¾"). Only fractions that have one are converted, and dates like "1/2/2024" are left alone.',
-    "fractionGlyphs",
-  );
+  toggle("set.curcode.name", "set.curcode.desc", "currencyUseCode");
+  toggle("set.frac.name", "set.frac.desc", "fractionGlyphs");
 
   // --- markdown / performance --------------------------------------------
   b.group(t("ui.msg.LinksTags"), true);
@@ -785,10 +760,10 @@ export function buildPredictiveSettingGroups(
     .addDropdown((d) =>
       d
         .addOptions({
-          both: "Menu + automatic tooltips",
-          menu: "Enhanced [[ menu only",
-          tooltips: "Automatic tooltips only",
-          off: "Off",
+          both: t("set.linkmode.both"),
+          menu: t("set.linkmode.menu"),
+          tooltips: t("set.linkmode.tooltips"),
+          off: t("set.linkmode.off"),
         })
         .setValue(linkMode())
         .onChange((v) => {
@@ -798,11 +773,7 @@ export function buildPredictiveSettingGroups(
           redraw?.(); // the sensitivity/length sliders below only matter for tooltips
         }),
     );
-  toggle(
-    "Underline linkable text (experimental)",
-    "Faintly underline any text in a note that matches an existing note's title or alias, so you can click it to insert a link. Independent of the tooltips above. Hover to preview, click to link or dismiss.",
-    "underlineLinks",
-  );
+  toggle("set.underline.name", "set.underline.desc", "underlineLinks");
   if (settings.suggestLinks) {
     row()
       .setName(t("ui.name.RelatedLinkSensitivity"))
@@ -829,41 +800,17 @@ export function buildPredictiveSettingGroups(
           }),
       );
   }
-  toggle(
-    "Suggest tags on #",
-    "As you type #, suggest tags relevant to this note, biased toward niche, descriptive words " +
-      "rather than generic ones. Existing vault tags come first; a few new tags from the note's " +
-      "own distinctive terms follow.",
-    "suggestTagsOnHash",
-  );
-  toggle(
-    "Mirror #tags into frontmatter",
-    "Keep the note's frontmatter tags: list matching the #tags you actually use in the body: a " +
-      "tag is added when it first appears inline, and removed once its last inline use is gone, " +
-      "with a notice each time. On by default. Note: frontmatter tags that never appear in the " +
-      "body get removed, so turn this off if you tag notes only in frontmatter.",
-    "syncFrontmatterTags",
-  );
-  b.note(
-    t("ui.msg.LinksGoInlineWhereConcept") +
-      "once, run \"Suggest links in this note\" or \"Suggest tags for this note\" (Ctrl/Cmd-P).",
-  );
+  toggle("set.tags.name", "set.tags.desc", "suggestTagsOnHash");
+  toggle("set.fm.name", "set.fm.desc", "syncFrontmatterTags");
+  b.note(t("set.links.note"));
 
   b.group(t("ui.msg.WhereWorksPerformance"), true);
-  toggle(
-    "Don't touch code, math, links & tags",
-    "Never predict or autocorrect inside code blocks, LaTeX math, [[wikilinks]], URLs, #tags, or frontmatter, so it can't corrupt them.",
-    "markdownAware",
-  );
+  toggle("set.md.name", "set.md.desc", "markdownAware");
   row()
     .setName(t("ui.name.ExcludedFoldersFiles"))
-    .setDesc(
-      "Files where predictions and autocorrect never run, one per line. A folder name " +
-        'excludes everything beneath it ("Templates"); glob patterns work too ' +
-        '("Journal/*", "*.excalidraw.md", "**/private/**").',
-    )
-    .addTextArea((t) =>
-      t
+    .setDesc(t("set.exclude.desc"))
+    .addTextArea((area) =>
+      area
         .setValue(settings.excludedFolders.join("\n"))
         .setPlaceholder(t("ui.ph.TemplatesNjournal"))
         .onChange((v) => {
@@ -871,11 +818,7 @@ export function buildPredictiveSettingGroups(
           commit();
         }),
     );
-  toggle(
-    "Off the main thread",
-    "Run prediction, autocorrect and model building in a background worker so typing never stutters. Turn off only to debug.",
-    "offMainThread",
-  );
+  toggle("set.worker.name", "set.worker.desc", "offMainThread");
   row()
     .setName(t("ui.name.WasmSimdAcceleration"))
     .setDesc(t("ui.help.RunNeuralModelFastInbrowser"))
@@ -897,16 +840,16 @@ export function buildPredictiveSettingGroups(
       void Promise.all([acceleration.status(), acceleration.missingAssets()])
         .then(([st, missing]) => {
           accelState.status = !st.lstmLoaded
-            ? "The neural model isn't installed (word_lstm.bin missing), so there is nothing to accelerate. Predictions use the word-frequency model only."
+            ? t("set.accel.noModel")
             : !settings.wasmSimd
-              ? "Turned off. The neural model is running on the slower scalar-JS path by your choice."
+              ? t("set.accel.off")
               : st.accelerated
-                ? "Active. The neural model is running on the WASM-SIMD kernel."
-                : "Enabled, but this device has no WASM-SIMD support, so the neural model fell back to the slower scalar-JS path (older mobile webviews; needs iOS 16.4+ on iPhone/iPad).";
+                ? t("set.accel.on")
+                : t("set.accel.unsupported");
           accelState.missing = missing;
         })
         .catch(() => {
-          accelState.status = "Could not read acceleration status.";
+          accelState.status = t("set.accel.error");
           accelState.missing = 0;
         })
         .finally(() => {
@@ -914,7 +857,7 @@ export function buildPredictiveSettingGroups(
           redraw?.();
         });
     }
-    b.note(accelState.status ?? "Checking acceleration…");
+    b.note(accelState.status ?? t("set.accel.checking"));
   }
   // Offer the one-time model download here too: a user who declined the first-run
   // prompt (or whose download failed) needs a way back that isn't reinstalling.
@@ -922,11 +865,7 @@ export function buildPredictiveSettingGroups(
     const n = accelState.missing;
     row()
       .setName(t("ui.name.DownloadLanguageModel"))
-      .setDesc(
-        `${n} model file${n === 1 ? " is" : "s are"} missing, so predictions are running ` +
-          `on your vault alone. The model is downloaded once from the plugin's GitHub ` +
-          `release; nothing is ever uploaded.`,
-      )
+      .setDesc(t("set.download.desc", { n }))
       .addButton((btn) =>
         btn
           .setButtonText(t("ui.btn.Download"))
@@ -945,7 +884,7 @@ export function buildPredictiveSettingGroups(
     .setDesc(t("ui.help.CompletionsAppearPopupListLets"))
     .addDropdown((d) =>
       d
-        .addOptions({ popup: "Popup list", ghost: "Inline ghost text" })
+        .addOptions({ popup: t("set.style.popup"), ghost: t("set.style.ghost") })
         .setValue(settings.ghostText ? "ghost" : "popup")
         .onChange((v) => {
           settings.ghostText = v === "ghost";
@@ -957,8 +896,15 @@ export function buildPredictiveSettingGroups(
     .setDesc(t("ui.desc.WhichKeysCountAsNear"))
     .addDropdown((d) =>
       d
-        .addOptions({ qwerty: "QWERTY", qwertz: "QWERTZ", azerty: "AZERTY", dvorak: "Dvorak" })
-        .setValue(settings.keyboardLayout)
+        // "uk" = ЙЦУКЕН for Ukrainian letters + QWERTY for Latin ones. A saved "qwerty" (the old
+        // English default) means the same thing now, so show it as "uk".
+        .addOptions({
+          uk: t("ui.opt.LayoutStandard"),
+          qwertz: "QWERTZ (" + t("ui.opt.LayoutLatinOnly") + ")",
+          azerty: "AZERTY (" + t("ui.opt.LayoutLatinOnly") + ")",
+          dvorak: "Dvorak (" + t("ui.opt.LayoutLatinOnly") + ")",
+        })
+        .setValue(settings.keyboardLayout === "qwerty" ? "uk" : settings.keyboardLayout)
         .onChange((v) => {
           settings.keyboardLayout = v as typeof settings.keyboardLayout;
           commit();
@@ -967,14 +913,14 @@ export function buildPredictiveSettingGroups(
 
   // --- personalization management ----------------------------------------
   if (!personalization) return b.groups;
-  b.group("Personalization", true);
+  b.group(t("set.group.personalization"), true);
   const stats = personalization.getStats();
   // The headline stats, the "See your stats" button and the support block live below the reset
   // buttons above. This group keeps the deeper learning controls.
   b.note(
     settings.personalizationEnabled
-      ? `So far: ${stats.accepts} suggestions accepted, ${stats.corrections} typos fixed, ${stats.reverts} undone, and ${stats.learnListSize} of your words on the don't-touch list. All of this lives in personalization.json in the plugin folder, travels with your vault, and stays out of your notes.`
-      : `Personalisation is off, so nothing new is being learned or used right now. Your ${stats.accepts} past accepts, ${stats.corrections} fixes and ${stats.reverts} undos are still saved and will kick back in the moment you turn it on.`,
+      ? t("set.pers.on", { accepts: stats.accepts, corrections: stats.corrections, reverts: stats.reverts, learn: stats.learnListSize })
+      : t("set.pers.off", { accepts: stats.accepts, corrections: stats.corrections, reverts: stats.reverts }),
   );
 
   row()

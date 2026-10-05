@@ -7,7 +7,7 @@ import { Component, debounce, MarkdownRenderer, MarkdownView, Menu, Notice, Plug
 import { t } from "./i18n";
 import type { Editor, EditorPosition, MarkdownFileInfo } from "obsidian";
 import type { EditorView } from "@codemirror/view";
-import { pathExcluded, termFreq, matchCase } from "./engine/index";
+import { pathExcluded, termFreq, matchCase, LETTERS, APOSTROPHES } from "./engine/index";
 import { PredictiveEngineController } from "./PredictiveEngineController";
 import { LinkIndex } from "./LinkIndex";
 import { RelatedIndex } from "./RelatedIndex";
@@ -163,8 +163,8 @@ export class PredictiveFeature {
       else fm.tags = [...inline].sort();
     });
     const parts: string[] = [];
-    if (added.length) parts.push(`added ${added.map((t) => `#${t}`).join(", ")}`);
-    if (removed.length) parts.push(`removed ${removed.map((t) => `#${t}`).join(", ")}`);
+    if (added.length) parts.push(t("tags.added", { list: added.map((x) => `#${x}`).join(", ") }));
+    if (removed.length) parts.push(t("tags.removed", { list: removed.map((x) => `#${x}`).join(", ") }));
     if (parts.length) new Notice(t("ui.msg.FrontmatterTags", { v1: parts.join("; ") }));
   }
 
@@ -250,9 +250,9 @@ export class PredictiveFeature {
    *  dictionary; only the tallies go to zero. Persisted to the vault immediately. */
   private confirmResetStats(): void {
     new ConfirmModal(this.plugin.app, {
-      title: "Reset all statistics?",
-      body: "This clears your keystrokes saved, streak, milestones, and every tally. It can't be undone. Your personal dictionary and learned adaptation are kept.",
-      confirmText: "Reset statistics",
+      title: t("confirm.resetStats.title"),
+      body: t("confirm.resetStats.body"),
+      confirmText: t("confirm.resetStats.ok"),
       onConfirm: () => void this.resetStats(),
     }).open();
   }
@@ -270,9 +270,9 @@ export class PredictiveFeature {
    *  your personal dictionary are untouched. Same red confirmation as resetting statistics. */
   private confirmResetPersonalization(): void {
     new ConfirmModal(this.plugin.app, {
-      title: "Reset personalization?",
-      body: "This erases everything the plugin has learned about how you write - the adaptive keyboard, learned ranking, and the words it has learned to leave alone. It can't be undone. Your settings and personal dictionary are kept.",
-      confirmText: "Reset personalization",
+      title: t("confirm.resetPersonalization.title"),
+      body: t("confirm.resetPersonalization.body"),
+      confirmText: t("confirm.resetPersonalization.ok"),
       onConfirm: () => void this.store.reset(),
     }).open();
   }
@@ -281,9 +281,9 @@ export class PredictiveFeature {
    *  personalization. Mutates the live settings object in place so held references stay valid. */
   private confirmResetSettings(save: () => Promise<void>, redraw: () => void): void {
     new ConfirmModal(this.plugin.app, {
-      title: "Reset all settings?",
-      body: "This puts every option in this menu back to its default. Your personal dictionary and everything the plugin has learned about how you write are kept.",
-      confirmText: "Reset settings",
+      title: t("confirm.resetSettings.title"),
+      body: t("confirm.resetSettings.body"),
+      confirmText: t("confirm.resetSettings.ok"),
       danger: false, // reversible-ish and non-destructive to your data: no red
       onConfirm: () => void this.resetSettings(save, redraw),
     }).open();
@@ -306,9 +306,9 @@ export class PredictiveFeature {
   /** Factory reset: settings, personalization, statistics AND the personal dictionary - the lot. */
   private confirmFactoryReset(save: () => Promise<void>, redraw: () => void): void {
     new ConfirmModal(this.plugin.app, {
-      title: "Factory reset?",
-      body: "Erases EVERYTHING this plugin stores: all settings, your personal dictionary, every statistic, and everything it has learned about how you write. It can't be undone.",
-      confirmText: "Factory reset",
+      title: t("confirm.factoryReset.title"),
+      body: t("confirm.factoryReset.body"),
+      confirmText: t("confirm.factoryReset.ok"),
       onConfirm: () => void this.factoryReset(save, redraw),
     }).open();
   }
@@ -386,7 +386,7 @@ export class PredictiveFeature {
     if (editor.getSelection()) return { from: editor.getCursor("from"), to: editor.getCursor("to") };
     const cur = editor.getCursor();
     const line = editor.getLine(cur.line);
-    const isW = (c: string) => /[A-Za-zА-Яа-яЇїІіЄєҐґ'’-]/.test(c);
+    const isW = (c: string) => WORD_CHAR.test(c);
     let s = cur.ch;
     let e = cur.ch;
     while (s > 0 && isW(line[s - 1])) s--;
@@ -495,9 +495,9 @@ export class PredictiveFeature {
     this.onPersistSettings?.();
     const parts: string[] = [];
     if (removedKnown.length)
-      parts.push(`${removedKnown.map((w) => `“${w}”`).join(", ")} (already recognised)`);
+      parts.push(t("dict.tidy.known", { words: removedKnown.map((w) => `«${w}»`).join(", ") }));
     if (removedVault.length)
-      parts.push(`${removedVault.map((w) => `“${w}”`).join(", ")} (no longer in the vault)`);
+      parts.push(t("dict.tidy.vault", { words: removedVault.map((w) => `«${w}»`).join(", ") }));
     new Notice(t("ui.msg.TidiedPersonalDictionaryRemoved", { v1: parts.join("; ") }));
   }
 
@@ -589,7 +589,7 @@ export class PredictiveFeature {
     // Live keystrokes-saved / streak indicator in the status bar.
     this.statusBar = this.plugin.addStatusBarItem();
     this.statusBar.addClass("mod-clickable");
-    this.statusBar.setAttribute("aria-label", "Writing stats (click to open)");
+    this.statusBar.setAttribute("aria-label", t("statusBar.aria"));
     this.plugin.registerDomEvent(this.statusBar, "click", () => this.openStats());
     this.renderStatus();
 
@@ -726,11 +726,7 @@ export class PredictiveFeature {
           );
           menu.addItem((item) =>
             item
-              .setTitle(
-                known
-                  ? `Capitalise after “${word}” again`
-                  : `Don't capitalise after “${word}” (abbreviation)`,
-              )
+              .setTitle(known ? t("menu.capitaliseAfterAgain", { word }) : t("menu.dontCapitaliseAfter", { word }))
               .setIcon(known ? "book-minus" : "book-plus")
               .onClick(() => (known ? this.forgetAbbreviation(bare) : this.addAbbreviation(bare))),
           );
@@ -752,7 +748,7 @@ export class PredictiveFeature {
           );
         }
         // Suggest more eloquent / academic alternatives for the word (needs the neural model).
-        if (this.settings.suggestAlternatives && this.engine.ready && /^[A-Za-zА-Яа-яЇїІіЄєҐґ][A-Za-zА-Яа-яЇїІіЄєҐґ'’-]*$/.test(word)) {
+        if (this.settings.suggestAlternatives && this.engine.ready && WHOLE_WORD.test(word)) {
           const range = this.selectionOrWordRange(editor);
           // Left context (the words leading up to the target) lets the ranker prefer substitutes that
           // fit THIS sentence - "the coffee was very strong" → potent, not weak. A couple of lines is
@@ -857,12 +853,12 @@ export class PredictiveFeature {
   private registerCommands(): void {
     this.plugin.addCommand({
       id: "show-writing-stats",
-      name: "Show writing stats",
+      name: t("cmd.showStats"),
       callback: () => this.openStats(),
     });
     this.plugin.addCommand({
       id: "show-getting-started",
-      name: "Show getting started",
+      name: t("cmd.showTutorial"),
       callback: () => this.openTutorial(),
     });
 
@@ -870,7 +866,7 @@ export class PredictiveFeature {
     // to your add-link hotkey if you want it to take over that muscle memory.
     this.plugin.addCommand({
       id: "link-selection",
-      name: "Link selection to a related note",
+      name: t("cmd.linkSelection"),
       editorCallback: (editor: Editor) => {
         if (!this.settings.pluginEnabled) return;
         const selection = editor.getSelection().trim();
@@ -894,7 +890,7 @@ export class PredictiveFeature {
 
     this.plugin.addCommand({
       id: "refresh-link-suggestions",
-      name: "Refresh link suggestions (bring back dismissed)",
+      name: t("cmd.refreshLinks"),
       editorCallback: (editor: Editor) => {
         this.dismissedRelated.clear();
         const cm = (editor as unknown as { cm?: EditorView }).cm;
@@ -905,7 +901,7 @@ export class PredictiveFeature {
 
     this.plugin.addCommand({
       id: "suggest-links",
-      name: "Suggest links in this note",
+      name: t("cmd.suggestLinks"),
       editorCallback: async (editor: Editor) => {
         const text = editor.getValue();
         const file = this.plugin.app.workspace.getActiveFile();
@@ -935,7 +931,7 @@ export class PredictiveFeature {
 
     this.plugin.addCommand({
       id: "suggest-tags",
-      name: "Suggest tags for this note",
+      name: t("cmd.suggestTags"),
       editorCallback: (editor: Editor, ctx: MarkdownFileInfo) => {
         const text = editor.getValue();
         const applied = new Set<string>();
@@ -964,11 +960,11 @@ export class PredictiveFeature {
         };
         for (const c of existing)
           menu.addItem((i) =>
-            i.setTitle(`#${c.tag}  ·  used in ${c.count} note${c.count === 1 ? "" : "s"}`).setIcon("tag").onClick(() => apply(c.tag)),
+            i.setTitle(`#${c.tag}  ·  ${t("tag.usedIn", { count: c.count })}`).setIcon("tag").onClick(() => apply(c.tag)),
           );
         if (existing.length && fresh.length) menu.addSeparator();
         for (const w of fresh)
-          menu.addItem((i) => i.setTitle(`#${w}  ·  new tag`).setIcon("plus").onClick(() => apply(w)));
+          menu.addItem((i) => i.setTitle(`#${w}  ·  ${t("tag.new")}`).setIcon("plus").onClick(() => apply(w)));
 
         const cm = (editor as unknown as { cm?: EditorView }).cm;
         const rect = cm?.coordsAtPos(cm.state.selection.main.head);
@@ -978,7 +974,7 @@ export class PredictiveFeature {
     });
     this.plugin.addCommand({
       id: "predictive-rebuild-personal",
-      name: "Predictive: rebuild personal (vault) model",
+      name: t("cmd.dev.rebuild"),
       callback: async () => {
         await this.engine.rebuildPersonal();
         new Notice(t("ui.msg.RebuiltPersonalPredictionModel"));
@@ -986,7 +982,7 @@ export class PredictiveFeature {
     });
     this.plugin.addCommand({
       id: "predictive-pack-global",
-      name: "Predictive: pack global model to binary",
+      name: t("cmd.dev.pack"),
       callback: async () => {
         const buf = await this.engine.packGlobal();
         if (!buf) {
@@ -1000,7 +996,7 @@ export class PredictiveFeature {
     });
     this.plugin.addCommand({
       id: "predictive-run-evaluation",
-      name: "Predictive: evaluate on current note",
+      name: t("cmd.dev.eval"),
       callback: async () => {
         const view = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
         const text = view?.editor.getValue() ?? "";
@@ -1010,7 +1006,12 @@ export class PredictiveFeature {
           return;
         }
         new Notice(
-          `Eval: correction ${(res.correctionAccuracy * 100) | 0}% · recall@k ${(res.recallAtK * 100) | 0}% · keystrokes saved ${(res.keystrokeSavings * 100) | 0}% (${res.corrupted} typos)`,
+          t("eval.result", {
+            acc: (res.correctionAccuracy * 100) | 0,
+            recall: (res.recallAtK * 100) | 0,
+            saved: (res.keystrokeSavings * 100) | 0,
+            typos: res.corrupted,
+          }),
           8000,
         );
       },
@@ -1223,7 +1224,9 @@ export class PredictiveFeature {
  * meant right-clicking an abbreviation - the one kind of token whose capitalisation behaviour
  * you most often want to change - offered no menu item at all.
  */
-const WORD_OR_ABBREV = /^[A-Za-zА-Яа-яЇїІіЄєҐґ][A-Za-zА-Яа-яЇїІіЄєҐґ'’-]*(?:\.[A-Za-zА-Яа-яЇїІіЄєҐґ'’-]+)*\.?$/;
+const WORD_OR_ABBREV = new RegExp(`^[${LETTERS}][${LETTERS}${APOSTROPHES}-]*(?:\\.[${LETTERS}${APOSTROPHES}-]+)*\\.?$`);
+const WORD_CHAR = new RegExp(`[${LETTERS}${APOSTROPHES}-]`);
+const WHOLE_WORD = new RegExp(`^[${LETTERS}][${LETTERS}${APOSTROPHES}-]*$`);
 
 /** The selected text if it's a single word, else the word under the cursor - for the
  *  right-click "add to dictionary" menu. Returns null if there is no plain word there. */
@@ -1232,7 +1235,7 @@ function selectedOrCursorWord(editor: Editor): string | null {
   if (sel) return WORD_OR_ABBREV.test(sel) ? sel : null;
   const cur = editor.getCursor();
   const line = editor.getLine(cur.line);
-  const isW = (c: string) => /[A-Za-zА-Яа-яЇїІіЄєҐґ'’.-]/.test(c);
+  const isW = (c: string) => new RegExp(`[${LETTERS}${APOSTROPHES}.-]`).test(c);
   let s = cur.ch;
   let e = cur.ch;
   while (s > 0 && isW(line[s - 1])) s--;
@@ -1256,7 +1259,13 @@ function selectedOrCursorWord(editor: Editor): string | null {
  * Matching is on the title, deliberately narrow (an exact set of known labels) so we
  * cannot hijack an unrelated entry like "Copy link" or another plugin's linker.
  */
-const NATIVE_LINK_TITLES = new Set(["add link", "insert link", "link to note", "add internal link"]);
+const NATIVE_LINK_TITLES = new Set([
+  "add link", "insert link", "link to note", "add internal link",
+  // Obsidian's own menu in Ukrainian (it follows the app language, so the English labels above
+  // never match there). Best-effort: if a label differs, the fallback adds our own item.
+  "додати посилання", "вставити посилання", "додати внутрішнє посилання",
+  "вставити внутрішнє посилання", "посилання на нотатку",
+]);
 
 function replaceLinkMenuItem(menu: Menu, run: () => void): boolean {
   const items = (menu as unknown as { items?: unknown[] }).items;

@@ -22,6 +22,8 @@ export interface LinkSpan extends LinkTarget {
   text: string;
 }
 
+import { ALNUM } from "./letters.ts";
+
 /** Single words this short or common are never matched on their own (a title of exactly
  *  one of these would be too noisy to underline everywhere). Multi-word titles are exempt. */
 const STOP = new Set([
@@ -29,6 +31,13 @@ const STOP = new Set([
   "by", "be", "we", "i", "you", "he", "she", "they", "this", "that", "with", "from",
   "was", "are", "but", "not", "have", "has", "had", "will", "can", "all", "one", "so",
   "if", "up", "out", "no", "do", "my", "me", "us",
+  // Ukrainian
+  "і", "й", "та", "або", "чи", "в", "у", "на", "з", "із", "зі", "до", "від", "по", "за", "про",
+  "для", "при", "під", "над", "між", "це", "що", "як", "не", "ні", "так", "то", "ця", "цей", "ці",
+  "я", "ти", "ми", "ви", "він", "вона", "воно", "вони", "мій", "твій", "наш", "ваш", "його", "її",
+  "їх", "ще", "вже", "але", "бо", "аж", "усе", "все", "там", "тут", "коли", "де", "хто", "щоб",
+  "є", "був", "була", "було", "були", "буде", "можна", "треба",
+  "його", "над", "мене", "тебе", "нас", "вас",
 ]);
 
 /** Ranges (in char offsets) that must never be matched: fenced/inline code, math, existing
@@ -53,7 +62,7 @@ export function protectedRanges(text: string): Array<[number, number]> {
   add(/<!--[\s\S]*?-->/g); // HTML comments
   add(/!?\[\[[^\]]*\]\]/g); // existing wikilinks and embeds
   add(/\[[^\]]*\]\([^)]*\)/g); // markdown links
-  add(/(^|\s)#[\w/-]+/g); // tags
+  add(/(^|\s)#[\w/\-А-ЩЬЮЯа-щьюяІіЇїЄєҐґ]+/g); // tags (\w is ASCII-only: keep Ukrainian tags)
   add(/https?:\/\/\S+/g); // urls
   // YAML frontmatter block at the very top (tolerating a BOM and CRLF endings), so its
   // fields (date, tags, aliases) are never treated as prose to segment or link.
@@ -86,9 +95,14 @@ export function findLinkSpans(
 
   // Word tokens with their offsets.
   const toks: Array<{ s: number; e: number }> = [];
-  const wre = /[A-Za-z0-9][A-Za-z0-9'’.-]*/g;
+  const wre = new RegExp(`[${ALNUM}][${ALNUM}'’ʼ.-]*`, "g");
   let wm: RegExpExecArray | null;
-  while ((wm = wre.exec(text))) toks.push({ s: wm.index, e: wm.index + wm[0].length });
+  while ((wm = wre.exec(text))) {
+    // The token pattern keeps interior dots/hyphens/apostrophes ("U.S.", "по-українськи", "м'яч"), but
+    // a TRAILING one is sentence punctuation: "…любить Київ." must still match the note "Київ".
+    const trimmed = wm[0].replace(/[.'’ʼ-]+$/, "");
+    if (trimmed) toks.push({ s: wm.index, e: wm.index + trimmed.length });
+  }
 
   const out: LinkSpan[] = [];
   let i = 0;

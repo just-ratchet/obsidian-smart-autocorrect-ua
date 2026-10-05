@@ -6,10 +6,12 @@
 import { buildAbbreviationSet } from "./abbreviations.ts";
 import { isSentenceTerminator } from "./tokenize.ts";
 import { fixDoubleCapital } from "./caseFix.ts";
+import { LETTERS } from "./letters.ts";
 
 export interface SentenceCaseConfig {
   abbreviations: Set<string>;
-  /** also fix standalone lowercase "i" -> "I". */
+  /** also fix standalone lowercase "i" -> "I". English-only: off by default, because in Ukrainian
+   *  text a lone Latin "i" is almost always a mistyped Cyrillic "і" ("and"), never the pronoun. */
   fixI: boolean;
   /** fix double capitals ("THe" -> "The"). */
   fixDoubleCaps?: boolean;
@@ -20,7 +22,7 @@ export interface SentenceCaseConfig {
 }
 
 export function defaultSentenceCaseConfig(extra: string[] = []): SentenceCaseConfig {
-  return { abbreviations: buildAbbreviationSet(extra), fixI: true, fixDoubleCaps: true };
+  return { abbreviations: buildAbbreviationSet(extra), fixI: false, fixDoubleCaps: true };
 }
 
 /**
@@ -56,10 +58,12 @@ export function shouldCapitalizeNext(
 
 /** Capitalise the first alphabetic character of `word`. */
 export function capitalizeFirst(word: string): string {
-  const i = word.search(/[A-Za-z]/);
+  const i = word.search(new RegExp(`[${LETTERS}]`));
   if (i < 0) return word;
   return word.slice(0, i) + word[i].toUpperCase() + word.slice(i + 1);
 }
+
+const ABBREV_BEFORE_RE = new RegExp(`(?:^|\\s)([${LETTERS}][${LETTERS}.\\-]*)\\.\\s*$`);
 
 /**
  * Apply auto-capitalisation to a freshly-completed `word` given its preceding
@@ -76,7 +80,7 @@ export function applyAutoCapitalization(
   const sentenceStart = shouldCapitalizeNext(precedingText, cfg);
   // Is the word immediately preceded by a KNOWN abbreviation + period ("incl.", "etc.", "e.g.")?
   // That is exactly where the cased LSTM over-capitalises - it reads the period as a sentence end.
-  const abbrevMatch = /(?:^|\s)([A-Za-z][A-Za-z.]*)\.\s*$/.exec(precedingText);
+  const abbrevMatch = ABBREV_BEFORE_RE.exec(precedingText);
   const afterAbbreviation =
     !!abbrevMatch && cfg.abbreviations.has(abbrevMatch[1].toLowerCase().replace(/\.$/, ""));
   // Proper-noun / acronym casing (e.g. "london" -> "London", "nasa" -> "NASA"), decided in context

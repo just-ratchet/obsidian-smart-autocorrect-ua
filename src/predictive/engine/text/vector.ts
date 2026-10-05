@@ -11,8 +11,23 @@
  * thing".
  */
 
+import { LETTERS, normalizeApostrophes } from "./letters.ts";
+
 /** Function words and filler that carry no topic signal, so they never enter a vector. */
 export const STOP_WORDS = new Set([
+  // Ukrainian function words / filler
+  "і", "й", "та", "або", "чи", "але", "бо", "щоб", "що", "як", "не", "ні", "так", "то", "ще", "вже",
+  "ж", "же", "би", "б", "ось", "лише", "тільки", "навіть", "також", "теж", "дуже", "майже",
+  "в", "у", "на", "з", "із", "зі", "до", "від", "по", "за", "про", "для", "при", "під", "над",
+  "між", "через", "без", "після", "перед", "біля", "серед", "щодо",
+  "я", "ти", "ми", "ви", "він", "вона", "воно", "вони", "мене", "тебе", "нас", "вас", "його",
+  "її", "їх", "мені", "тобі", "йому", "їй", "нам", "вам", "їм", "мій", "твій", "наш", "ваш",
+  "свій", "цей", "ця", "це", "ці", "той", "та", "те", "ті", "такий", "такі", "який", "яка",
+  "яке", "які", "хто", "щось", "хтось", "все", "усе", "всі", "усі", "весь", "вся",
+  "є", "був", "була", "було", "були", "буде", "будуть", "бути", "може", "можна", "треба", "потрібно",
+  "тут", "там", "тоді", "коли", "де", "куди", "звідки", "чому", "тому", "отже", "проте", "однак",
+  "якщо", "хоча", "коли", "поки", "щойно", "саме", "дещо", "кожен", "кожна", "кожне", "інший",
+
   "the", "a", "an", "and", "or", "but", "of", "to", "in", "on", "at", "for", "is", "it",
   "as", "by", "be", "we", "i", "you", "he", "she", "they", "this", "that", "with", "from",
   "was", "are", "not", "have", "has", "had", "will", "would", "can", "could", "should",
@@ -28,10 +43,10 @@ export const STOP_WORDS = new Set([
 /** Split text into lower-cased content terms (letters, length ≥ 3, no stop words). */
 export function terms(text: string): string[] {
   const out: string[] = [];
-  const re = /[a-zA-ZА-Яа-яЇїІіЄєҐґ][a-zA-ZА-Яа-яЇїІіЄєҐґ'’-]{2,}/g;
+  const re = new RegExp(`[${LETTERS}][${LETTERS}'’ʼ-]{2,}`, "g");
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
-    const w = m[0].toLowerCase().replace(/^['-]+|['-]+$/g, "");
+    const w = normalizeApostrophes(m[0].toLowerCase()).replace(/^['-]+|['-]+$/g, "");
     if (w.length >= 3 && !STOP_WORDS.has(w)) out.push(w);
   }
   return out;

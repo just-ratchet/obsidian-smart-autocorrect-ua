@@ -109,6 +109,13 @@ const ELOQUENCE_PAIRS: [string, string][] = [
   ["comprehend", "understand"], ["assist", "help"], ["sufficient", "enough"], ["additional", "more"],
   ["require", "need"], ["purchase", "buy"], ["inquire", "ask"], ["construct", "build"],
   ["numerous", "lots"], ["therefore", "so"], ["however", "but"], ["regarding", "about"],
+  // Ukrainian (formal, colloquial). Pairs with a word missing from the vocab simply don't count.
+  ["розпочати", "почати"], ["здійснити", "зробити"], ["придбати", "купити"], ["однак", "але"],
+  ["проте", "але"], ["значний", "великий"], ["численні", "багато"], ["отримати", "взяти"],
+  ["необхідно", "треба"], ["достатньо", "досить"], ["запитати", "спитати"], ["побудувати", "збудувати"],
+  ["щодо", "про"], ["наразі", "зараз"], ["оскільки", "бо"], ["володіти", "мати"],
+  ["прагнути", "хотіти"], ["здатний", "вмілий"], ["допомогти", "помогти"], ["спілкуватися", "балакати"],
+  ["розуміти", "тямити"], ["використовувати", "брати"], ["приблизно", "десь"], ["суттєвий", "великий"],
 ];
 
 /** Coarse inflection class, so an alternative keeps the query's number/tense (a plural stays
@@ -146,13 +153,22 @@ const ANTONYM_SEEDS: [string, string][] = [
   // direction / change (so verbs like increase/decrease separate too)
   ["increase", "decrease"], ["rise", "fall"], ["grow", "shrink"], ["gain", "lose"], ["expand", "contract"],
   ["improve", "worsen"], ["accept", "reject"], ["win", "lose"],
+  // Ukrainian
+  ["сильний", "слабкий"], ["великий", "малий"], ["гарячий", "холодний"], ["швидкий", "повільний"],
+  ["високий", "низький"], ["твердий", "м'який"], ["світлий", "темний"], ["повний", "порожній"],
+  ["чистий", "брудний"], ["гучний", "тихий"], ["широкий", "вузький"], ["товстий", "тонкий"],
+  ["глибокий", "мілкий"], ["важкий", "легкий"], ["добрий", "поганий"], ["чудовий", "жахливий"],
+  ["гарний", "бридкий"], ["щасливий", "сумний"], ["багатий", "бідний"], ["збільшити", "зменшити"],
+  ["зростати", "падати"], ["виграти", "програти"], ["прийняти", "відхилити"],
+  ["покращити", "погіршити"], ["любити", "ненавидіти"], ["початок", "кінець"], ["радість", "сум"],
 ];
 
 /** Is `w` a negation of `base` ("happy"→"unhappy", "clear"→"unclear", "like"→"dislike")? The tied
  *  embedding places antonyms very close to their root, so a negated form is a frequent false
  *  "alternative"; this catches the productive morphological ones cheaply. */
 function isNegationOf(base: string, w: string): boolean {
-  for (const p of ["un", "in", "im", "dis", "non", "ir", "il"]) {
+  // "не-" is the Ukrainian negation ("добрий" → "недобрий", "можливий" → "неможливий").
+  for (const p of ["un", "in", "im", "dis", "non", "ir", "il", "не"]) {
     if (w === p + base) return true;
     if (base === p + w) return true; // the query itself is the negated form
   }
@@ -699,7 +715,7 @@ export class LstmLanguageModel implements LanguageModel {
       // foreign words and OCR junk ("pygmygoby", "tsibbur").
       if (i > V * 0.66) continue;
       const w = this.vocab[i];
-      if (!/^[a-z]+$/.test(w)) continue; // plain lowercase words only
+      if (!/^[a-zа-щьюяіїєґ]+$/.test(w)) continue; // plain lowercase words only (Latin or Ukrainian)
       if (w.length < 3) continue; // "u", "ok"… aren't alternatives
       const b = i * dim, s = sw[i];
       let d = 0;

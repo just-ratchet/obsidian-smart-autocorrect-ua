@@ -117,13 +117,13 @@ export async function downloadAssets(
       });
       const buf = res.arrayBuffer;
       if (buf.byteLength !== a.bytes) {
-        throw new Error(`expected ${a.bytes} bytes, got ${buf.byteLength}`);
+        throw new Error(t("assets.err.size", { want: a.bytes, got: buf.byteLength }));
       }
       // Skip the digest check only when the release was published without one.
       if (!a.sha256.startsWith("__")) {
         const got = await sha256Hex(buf);
         if (got !== a.sha256)
-          throw new Error(`checksum mismatch (${got.slice(0, 12)}…)`);
+          throw new Error(t("assets.err.checksum", { sum: got.slice(0, 12) }));
       }
       await adapter.writeBinary(`${dir}/${a.file}`, buf);
       done.push(a);

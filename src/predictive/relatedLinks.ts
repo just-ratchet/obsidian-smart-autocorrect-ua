@@ -20,10 +20,11 @@ import type { App } from "obsidian";
 import { StateEffect, StateField } from "@codemirror/state";
 import { Decoration, EditorView, ViewPlugin, WidgetType, type DecorationSet, type ViewUpdate } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
-import { segmentText } from "./engine/index";
+import { segmentText, LETTERS } from "./engine/index";
 import { LinkChooser } from "./LinkChooser";
 import type { RelatedIndex, RelatedCandidate } from "./RelatedIndex";
 import type { PredictiveSettings } from "./PredictiveSettings";
+import { t } from "./i18n";
 
 interface SegSuggestion {
   anchor: number; // where the icon sits and a link is inserted
@@ -44,6 +45,13 @@ const ANCHOR_STOP = new Set([
   "have", "has", "had", "will", "can", "all", "one", "so", "if", "up", "out", "no", "do", "my",
   "me", "us", "our", "their", "its", "his", "her", "them", "then", "than", "there", "here", "who",
   "which", "what", "when", "where", "how", "why", "some", "any", "each", "very", "more", "most",
+  // Ukrainian
+  "і", "й", "та", "або", "чи", "але", "бо", "щоб", "що", "як", "не", "ні", "так", "то", "ще", "вже",
+  "в", "у", "на", "з", "із", "зі", "до", "від", "по", "за", "про", "для", "при", "під", "над",
+  "між", "через", "без", "я", "ти", "ми", "ви", "він", "вона", "воно", "вони", "його", "її", "їх",
+  "мій", "твій", "наш", "ваш", "свій", "цей", "ця", "це", "ці", "той", "та", "те", "ті", "який",
+  "яка", "яке", "які", "хто", "є", "був", "була", "було", "були", "буде", "може", "можна", "треба",
+  "тут", "там", "тоді", "коли", "де", "тому", "якщо", "дуже", "тільки", "також", "все", "усе",
 ]);
 
 /**
@@ -56,7 +64,7 @@ const ANCHOR_STOP = new Set([
 function pickAnchorSpan(segText: string, segFrom: number, cand: RelatedCandidate): { from: number; to: number } | null {
   const anchorWords = new Set<string>();
   const collect = (t: string) => {
-    for (const w of t.toLowerCase().match(/[a-z][a-z'-]{2,}/g) ?? []) if (!ANCHOR_STOP.has(w)) anchorWords.add(w);
+    for (const w of t.toLowerCase().match(new RegExp(`[${LETTERS}][${LETTERS}'-]{2,}`, "g")) ?? []) if (!ANCHOR_STOP.has(w)) anchorWords.add(w);
   };
   collect(cand.display);
   if (cand.heading) collect(cand.heading);
@@ -64,7 +72,7 @@ function pickAnchorSpan(segText: string, segFrom: number, cand: RelatedCandidate
   if (anchorWords.size === 0) return null;
 
   const toks: Array<{ s: number; e: number; w: string }> = [];
-  const re = /[A-Za-z][A-Za-z'-]*/g;
+  const re = new RegExp(`[${LETTERS}][${LETTERS}'-]*`, "g");
   let m: RegExpExecArray | null;
   while ((m = re.exec(segText))) toks.push({ s: m.index, e: m.index + m[0].length, w: m[0].toLowerCase() });
 
@@ -123,7 +131,7 @@ function segKey(text: string): string {
   return text.trim().toLowerCase().slice(0, 80);
 }
 function wordCount(text: string): number {
-  return (text.match(/[a-zA-Z][a-zA-Z'-]*/g) ?? []).length;
+  return (text.match(new RegExp(`[${LETTERS}][${LETTERS}'-]*`, "g")) ?? []).length;
 }
 /** True if the block already contains a wikilink or a markdown link. */
 function hasLink(text: string): boolean {
@@ -155,7 +163,7 @@ class LinkIconWidget extends WidgetType {
   }
   toDOM(view: EditorView): HTMLElement {
     const el = createSpan({ cls: "smart-autocorrect-link-icon" });
-    el.setAttribute("aria-label", `${this.seg.candidates.length} related note${this.seg.candidates.length === 1 ? "" : "s"}`);
+    el.setAttribute("aria-label", t("link.icon.aria", { n: this.seg.candidates.length }));
     setIcon(el, "link");
     el.onmousedown = (e) => {
       e.preventDefault();
@@ -193,10 +201,8 @@ class RelatedPopover {
       // Line the list up with the icon that opened it, so the connection is obvious; the dock
       // moves it up if the preview would otherwise have no room.
       preferredTop: iconEl.getBoundingClientRect().top,
-      title: "Link this section to…",
-      hint: hasSelection
-        ? "Your selected text will become the link."
-        : "Tip: select text first to link just that phrase.",
+      title: t("link.section.title"),
+      hint: hasSelection ? t("link.section.hint") : t("link.hintNoSel"),
       onChoose: (c) => this.onInsert(seg, c, view),
       onDismiss: () => this.onDismiss(seg, view),
     });
