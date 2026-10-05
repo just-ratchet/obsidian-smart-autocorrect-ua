@@ -22,6 +22,10 @@ export function buildSerializedCountsFromDocs(docs: string[]): {
     "u.s", "u.k", "u.n", "a.m", "p.m", "jan", "feb", "mar", "apr", "jun",
     "jul", "aug", "sep", "sept", "oct", "nov", "dec", "inc", "ltd", "co",
     "no", "fig", "vol", "cf", "al",
+    // Ukrainian (the full list lives in text/abbreviations.ts; this kernel must stay import-free)
+    "т.д", "т.п", "т.ч", "т.зв", "т.к", "т.н", "н.е", "див", "пор", "напр", "зокр", "тис", "млн",
+    "млрд", "грн", "коп", "р", "рр", "ст", "вул", "просп", "проф", "акад", "доц", "ім", "обл",
+    "км", "стор", "табл", "тел", "авт", "ред", "пп", "пн", "вт", "чт", "пт", "сб", "нд",
   ]);
 
   const vocab: string[] = [];
@@ -51,7 +55,11 @@ export function buildSerializedCountsFromDocs(docs: string[]): {
   };
 
   const norm = (w: string): string =>
-    w.toLowerCase().replace(/^[^a-z0-9а-яіїєґ]+/i, "").replace(/[^a-z0-9а-яіїєґ]+$/i, "");
+    w
+      .toLowerCase()
+      .replace(/[’ʼ‘]/g, "'")
+      .replace(/^[^a-z0-9а-щьюяіїєґ]+/i, "")
+      .replace(/[^a-z0-9а-щьюяіїєґ]+$/i, "");
 
   for (const text of docs) {
     // sentence split (abbreviation-aware, simplified)
@@ -83,7 +91,7 @@ export function buildSerializedCountsFromDocs(docs: string[]): {
       if (n) sentence.push(n);
       if (/[.!?…]["')\]]?$/.test(tok)) {
         const stem = tok.replace(/["')\]]+$/, "").replace(/\.$/, "").toLowerCase();
-        if (/[!?…]/.test(tok) || (!ABBR.has(stem) && !/\d$/.test(stem) && !/^([a-z]\.)+[a-z]?$/i.test(tok.replace(/["')\]]+$/, "")))) {
+        if (/[!?…]/.test(tok) || (!ABBR.has(stem) && !/\d$/.test(stem) && !/^([a-zа-щьюяіїєґ]\.)+[a-zа-щьюяіїєґ]?$/i.test(tok.replace(/["')\]]+$/, "")))) {
           flush();
         }
       }

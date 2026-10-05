@@ -40,7 +40,9 @@ export interface SuggestionCaseOptions {
  */
 export function upperFromText(textBeforeCursor: string): boolean {
   const text = textBeforeCursor;
-  const isLetter = (c: string) => (c >= "A" && c <= "Z") || (c >= "a" && c <= "z");
+  // Any cased letter: Latin and Cyrillic both (a char is a letter iff its cases differ).
+  const isLetter = (c: string) => c.toLowerCase() !== c.toUpperCase();
+  const isCap = (c: string) => c === c.toUpperCase();
   let i = text.length - 1;
 
   // Read the trailing word (maximal letter run) ending at `i`, skipping separators
@@ -50,7 +52,7 @@ export function upperFromText(textBeforeCursor: string): boolean {
     let caps = 0, lower = 0, saw = false;
     while (i >= 0 && isLetter(text[i])) {
       saw = true;
-      if (text[i] <= "Z") caps++;
+      if (isCap(text[i])) caps++;
       else lower++;
       i--;
     }

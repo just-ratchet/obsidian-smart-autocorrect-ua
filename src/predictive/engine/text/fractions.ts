@@ -18,7 +18,8 @@ const FRACTIONS: Record<string, string> = {
  * word boundary.
  */
 export function fractionGlyph(before: string): { start: number; text: string } | null {
-  const m = before.match(/(?:^|[^\w/])(\d{1,2}\/\d{1,2})$/);
+  // [^\w/] alone would treat a Cyrillic letter as a boundary ("р1/2" -> "р½"), so letters count too.
+  const m = before.match(/(?:^|[^\w/А-ЩЬЮЯа-щьюяІіЇїЄєҐґ])(\d{1,2}\/\d{1,2})$/);
   if (!m) return null;
   const glyph = FRACTIONS[m[1]];
   if (!glyph) return null;

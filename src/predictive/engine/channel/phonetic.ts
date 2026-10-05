@@ -1,15 +1,59 @@
 /**
- * Phonetic channel path (#3). A compact Metaphone-style key collapses words to
- * how they sound, so cognitive/spelling errors that geometry can't explain
- * ("fone"->"phone", "nite"->"night", "seperate"->"separate", "definately"->
- * "definitely") become cheap. The predictor takes min(channelCost, phoneticCost).
+ * Phonetic channel path (#3). A compact key collapses words to how they sound, so
+ * cognitive/spelling errors that geometry can't explain become cheap. Ukrainian words
+ * ("прівіт"->"привіт", "Украіна"->"Україна", "шо"/"що") use a Ukrainian key; Latin words keep
+ * the original Metaphone-style one ("fone"->"phone", "definately"->"definitely"). The predictor takes min(channelCost, phoneticCost).
  */
 import { structuralEdit } from "./editDistance.ts";
 
 const VOWELS = new Set(["A", "E", "I", "O", "U"]);
 
-/** Reduced phonetic key. Not full Double Metaphone, but effective and cheap. */
+const CYRILLIC = /[А-Яа-яІіЇїЄєҐґ]/;
+
+/** Word-final voiced → voiceless: the spelling slips people actually make ("дуп" for "дуб"). */
+const DEVOICE: Record<string, string> = { б: "п", д: "т", г: "х", ґ: "к", ж: "ш", з: "с" };
+
+/**
+ * Phonetic key for Ukrainian. Collapses what is written inconsistently but sounds (nearly) the
+ * same: unstressed е/и and the и/і/ї mix-ups ("прівіт", "Украіна"), the apostrophe and soft sign
+ * (silent as letters), "ться/тся" → "ця", щ ≈ шч, ґ ≈ г, final devoicing, doubled consonants.
+ * Vowels are kept (unlike the English key) because Ukrainian vowel letters change the word.
+ */
+function ukrainianPhoneticKey(word: string): string {
+  let w = word
+    .toLowerCase()
+    .replace(/['’ʼ`´ь-]/g, "") // apostrophe, soft sign and hyphen carry no sound of their own
+    .replace(/[^а-щюяіїєґ]/g, "");
+  if (!w) return "";
+  w = w
+    .replace(/щ/g, "шч")
+    .replace(/ся$/, "с") // the reflexive ending is written -ся or -сь: "вчитися" ≈ "вчитись"
+    .replace(/тс/g, "ц")
+    .replace(/ґ/g, "г")
+    .replace(/[еиії]/g, "и");
+  w = w.replace(/(.)\1+/g, "$1"); // doubled letters: "життя" ≈ "житя"
+  const last = w[w.length - 1];
+  if (DEVOICE[last]) w = w.slice(0, -1) + DEVOICE[last];
+  return w;
+}
+
+const KEY_CACHE = new Map<string, string>();
+const KEY_CACHE_MAX = 20000;
+
+/** Reduced phonetic key. Not full Double Metaphone, but effective and cheap. Memoised: the
+ *  predictor asks for the SAME typed word's key once per candidate. */
 export function phoneticKey(word: string): string {
+  let k = KEY_CACHE.get(word);
+  if (k === undefined) {
+    k = computePhoneticKey(word);
+    if (KEY_CACHE.size >= KEY_CACHE_MAX) KEY_CACHE.clear();
+    KEY_CACHE.set(word, k);
+  }
+  return k;
+}
+
+function computePhoneticKey(word: string): string {
+  if (CYRILLIC.test(word)) return ukrainianPhoneticKey(word);
   let w = word.toUpperCase().replace(/[^A-Z]/g, "");
   if (!w) return "";
 

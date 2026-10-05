@@ -2,9 +2,10 @@
  * Deterministic casing/contraction fixes that complement the statistical
  * autocorrect (they don't replace it):
  *
- *  - fixDoubleCapital: "THe" -> "The" (shift held a beat too long), leaving
- *    acronyms (NASA) and CamelCase (TypeScript) alone.
- *  - fixContraction:   "dont" -> "don't" - a curated failsafe for the common
+ *  - fixDoubleCapital: "THe" -> "The" / "ПРивіт" -> "Привіт" (shift held a beat too long),
+ *    leaving acronyms (NASA, ЗСУ) and CamelCase (TypeScript) alone.
+ *  - fixContraction:   "dont" -> "don't" - ENGLISH-ONLY (Ukrainian has no contractions to
+ *    restore; its apostrophe is handled by the typo model). A curated failsafe for the common
  *    apostrophe cases, so they're guaranteed corrected AND never learned into
  *    the personal recommendation data. Only unambiguous non-words are listed.
  *
@@ -14,9 +15,10 @@
  * "i will polish it" just because "Polish" is common.
  */
 
-/** "THe" -> "The". Only the exact two-leading-capitals typo pattern. */
+/** "THe" -> "The", "ПРивіт" -> "Привіт". Only the exact two-leading-capitals typo pattern. */
 export function fixDoubleCapital(word: string): string {
-  if (/^[A-Z][A-Z][a-z]+$/.test(word)) {
+  // Latin ("THe") and Ukrainian ("ПРивіт", "ЗАвтра"): two leading capitals, then lower case.
+  if (/^[A-Z][A-Z][a-z]+$/.test(word) || /^[А-ЩЬЮЯІЇЄҐ][А-ЩЬЮЯІЇЄҐ][а-щьюяіїєґ']+$/.test(word)) {
     return word[0] + word[1].toLowerCase() + word.slice(2);
   }
   return word;

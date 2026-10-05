@@ -2,13 +2,16 @@
  * Keyboard error model. Per-operation costs (nats) for the weighted edit
  * distance. Substitution uses an empirical confusion table when available,
  * otherwise a physical key-distance prior - now for a SELECTABLE layout
- * (QWERTY / QWERTZ / AZERTY / Dvorak), so non-US typists get accurate geometry.
+ * (ЙЦУКЕН for Ukrainian, plus the Latin layouts for mixed-language notes).
  */
 import { foldDiacritics } from "../text/normalize.ts";
 
-export type KeyboardLayoutName = "qwerty" | "qwertz" | "azerty" | "dvorak";
+export type KeyboardLayoutName = "uk" | "qwerty" | "qwertz" | "azerty" | "dvorak";
 
 const LAYOUTS: Record<KeyboardLayoutName, string[]> = {
+  // Standard Ukrainian ЙЦУКЕН. ґ sits on the key left of Enter/Backspace on desktop layouts, so it
+  // is placed next to ї; the apostrophe has its own key at the end of the bottom row.
+  uk: ["йцукенгшщзхїґ", "фівапролджє", "ячсмитьбю"],
   qwerty: ["qwertyuiop", "asdfghjkl", "zxcvbnm"],
   qwertz: ["qwertzuiop", "asdfghjkl", "yxcvbnm"],
   azerty: ["azertyuiop", "qsdfghjklm", "wxcvbn"],
@@ -23,7 +26,7 @@ function keyPos(layout: KeyboardLayoutName): Map<string, { x: number; y: number 
   let m = layoutCache.get(layout);
   if (m) return m;
   m = new Map();
-  const rows = LAYOUTS[layout] ?? LAYOUTS.qwerty;
+  const rows = LAYOUTS[layout] ?? LAYOUTS.uk;
   rows.forEach((row, r) => {
     for (let c = 0; c < row.length; c++) m.set(row[c], { x: c + ROW_OFFSET[r], y: r });
   });
@@ -31,8 +34,17 @@ function keyPos(layout: KeyboardLayoutName): Map<string, { x: number; y: number 
   return m;
 }
 
-export function keyDistance(a: string, b: string, layout: KeyboardLayoutName = "qwerty"): number {
-  const pos = keyPos(layout);
+const CYRILLIC = /[Ѐ-ӿ]/;
+
+/**
+ * Distance between two keys in key-widths. Cyrillic letters are ALWAYS measured on ЙЦУКЕН
+ * (a Latin layout has no Cyrillic keys at all, which made every Ukrainian substitution look
+ * "far" - 3.0 - and so uncorrectable); Latin letters use the selected Latin layout, with
+ * QWERTY standing in when the selected one is "uk".
+ */
+export function keyDistance(a: string, b: string, layout: KeyboardLayoutName = "uk"): number {
+  const cyr = CYRILLIC.test(a) || CYRILLIC.test(b);
+  const pos = keyPos(cyr ? "uk" : layout === "uk" ? "qwerty" : layout);
   const pa = pos.get(a);
   const pb = pos.get(b);
   if (!pa || !pb) return 3; // unknown key: far
@@ -57,7 +69,7 @@ export const DEFAULT_CHANNEL: ChannelConfig = {
   insertCost: 2.3,
   transposeCost: 1.5,
   caseCost: 0.05,
-  layout: "qwerty",
+  layout: "uk",
 };
 
 export function substitutionCost(intended: string, typed: string, cfg: ChannelConfig): number {

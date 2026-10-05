@@ -33,6 +33,8 @@ import {
   currencySymbolForWord,
   isCurrencyWordPrefix,
   type SuggestionCase,
+  WORD_AT_END,
+  AFTER_FINISHED_TOKEN,
 } from "./engine/index";
 import { contextWords } from "./context";
 import { indentEditField } from "./tabIndent";
@@ -231,7 +233,7 @@ export class PredictiveSuggest extends EditorSuggest<SuggestItem> {
       if (cur) return { start: { line: cursor.line, ch: cur.start }, end: cursor, query: before.slice(cur.start) };
     }
 
-    const m = before.match(/([A-Za-zА-Яа-яЇїІіЄєҐґ][A-Za-zА-Яа-яЇїІіЄєҐґ'’-]*)$/);
+    const m = before.match(WORD_AT_END);
     const query = m ? m[1] : "";
     const startCh = cursor.ch - query.length;
 
@@ -256,8 +258,9 @@ export class PredictiveSuggest extends EditorSuggest<SuggestItem> {
     if (query.length === 0) {
       // Next-word / phrase prediction right after a finished token + space. Besides a word char,
       // allow a currency symbol so "2$ " (or "€5 ") still offers a following word - the "$" is not a
-      // \w, which is why no suggestion appeared there before.
-      if (!/[\w$€£¥₹₽₩₪฿₺₴₦₱₫₿%)]\s$/.test(before)) return null;
+      // \w, which is why no suggestion appeared there before. NB \w is ASCII-only, so "привіт " has
+      // no word char before the space either: the Ukrainian letters must be listed explicitly.
+      if (!AFTER_FINISHED_TOKEN.test(before)) return null;
     } else if (query.length < this.settings.minChars) {
       // Word being typed is shorter than the trigger threshold: wait for more letters.
       return null;
@@ -331,7 +334,7 @@ export class PredictiveSuggest extends EditorSuggest<SuggestItem> {
     if (!this.settings.currencyFormat && !this.settings.currencyWordToSymbol) return null;
     const cur = currencyProposal(lineToCaret, this.currencyOpts());
     if (!cur) return null;
-    return { insert: cur.text, display: "Format currency", kind: "currency", score: Infinity, replaceFromCh: cur.start, badge: cur.symbol || "¤" };
+    return { insert: cur.text, display: t("popup.formatCurrency"), kind: "currency", score: Infinity, replaceFromCh: cur.start, badge: cur.symbol || "¤" };
   }
 
   /**

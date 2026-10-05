@@ -481,3 +481,8 @@ body {
 .smart-autocorrect-collapsible[open] > summary::before {
   transform: rotate(90deg);
 }
+
+/* The tour's stats step is drawn live (see TutorialModal.renderStatsDemo), not a screenshot. */
+.smart-autocorrect-tutorial .sa-tut-statdemo {
+  margin: 16px 0 4px;
+}

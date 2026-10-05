@@ -20,6 +20,7 @@
  *   - quote/table→ end of the block's first line.
  */
 import { protectedRanges } from "./linkMatch.ts";
+import { LETTERS } from "./letters.ts";
 
 export type SegmentKind = "paragraph" | "list" | "quote" | "table";
 
@@ -76,7 +77,7 @@ function classify(text: string): LineKind {
 }
 
 function wordish(text: string): number {
-  return (text.match(/[a-zA-Z][a-zA-Z'-]{2,}/g) ?? []).length;
+  return (text.match(new RegExp(`[${LETTERS}][${LETTERS}'’ʼ-]{2,}`, "g")) ?? []).length;
 }
 
 /** True only when the block sits ENTIRELY inside one protected range (a fenced code

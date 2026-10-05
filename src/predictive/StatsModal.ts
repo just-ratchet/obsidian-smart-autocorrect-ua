@@ -25,8 +25,8 @@ export interface StatsSnapshot {
 }
 
 function timeText(mins: number): string {
-  if (mins >= 60) return `${(mins / 60).toFixed(1)} hours`;
-  return `${Math.round(mins)} min`;
+  if (mins >= 60) return t("time.hoursLong", { n: (mins / 60).toFixed(1) });
+  return t("time.minutes", { n: Math.round(mins) });
 }
 
 export class StatsModal extends Modal {
@@ -67,15 +67,13 @@ export class StatsModal extends Modal {
       c.createDiv({ cls: "sa-stat-value", text: value });
       c.createDiv({ cls: "sa-stat-label", text: label });
     };
-    card(s.keystrokesSaved.toLocaleString(), "keystrokes saved");
-    card(timeText(s.minutesSaved), "typing time saved");
-    card(`${s.streak} day${s.streak === 1 ? "" : "s"}`, "current streak");
+    card(s.keystrokesSaved.toLocaleString(), t("stats.keystrokesSaved"));
+    card(timeText(s.minutesSaved), t("stats.timeSaved"));
+    card(t("stats.days", { n: s.streak }), t("stats.currentStreak"));
 
     // Secondary line: today + best streak.
     const sub = root.createEl("p", { cls: "sa-stat-sub" });
-    sub.setText(
-      `${s.todaySaved.toLocaleString()} saved today · longest streak ${s.bestStreak} day${s.bestStreak === 1 ? "" : "s"}`,
-    );
+    sub.setText(t("stats.sub", { today: s.todaySaved.toLocaleString(), best: s.bestStreak }));
 
     // Progress to the next milestone.
     if (s.nextMilestone !== null) {
@@ -85,14 +83,14 @@ export class StatsModal extends Modal {
       const wrap = root.createDiv({ cls: "sa-progress-wrap" });
       wrap.createDiv({
         cls: "sa-progress-label",
-        text: `Next up: ${s.nextMilestone.toLocaleString()} keystrokes saved`,
+        text: t("stats.nextUp", { n: s.nextMilestone.toLocaleString() }),
       });
       const bar = wrap.createDiv({ cls: "sa-progress-bar" });
       const fill = bar.createDiv({ cls: "sa-progress-fill" });
       fill.style.width = `${Math.round(done * 100)}%`;
       wrap.createDiv({
         cls: "sa-progress-remaining",
-        text: `${(s.nextMilestone - s.keystrokesSaved).toLocaleString()} to go`,
+        text: t("stats.toGo", { n: (s.nextMilestone - s.keystrokesSaved).toLocaleString() }),
       });
     } else {
       root.createEl("p", {

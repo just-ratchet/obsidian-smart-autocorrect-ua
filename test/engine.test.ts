@@ -87,10 +87,12 @@ test("channel: case mismatch is nearly free; identical is zero", () => {
 });
 
 test("channel: adjacent-key substitution cheaper than far-key", () => {
-  // 's' is adjacent to 'a'; 'p' is far from 'a' on QWERTY.
-  const near = channelCost("s", "a", DEFAULT_CHANNEL);
-  const far = channelCost("p", "a", DEFAULT_CHANNEL);
-  assert.ok(near < far);
+  // 's' is adjacent to 'a'; 'p' is far from 'a' on QWERTY (Latin text keeps its own layout).
+  const qwerty = { ...DEFAULT_CHANNEL, layout: "qwerty" as const };
+  assert.ok(channelCost("s", "a", qwerty) < channelCost("p", "a", qwerty));
+  // And on the Ukrainian ЙЦУКЕН default: 'в' sits right next to 'а'; 'й' is across the keyboard.
+  assert.equal(DEFAULT_CHANNEL.layout, "uk");
+  assert.ok(channelCost("в", "а", DEFAULT_CHANNEL) < channelCost("й", "а", DEFAULT_CHANNEL));
 });
 
 test("channel: missed character (deletion) recovered", () => {
@@ -296,7 +298,10 @@ test("auto-capitalisation: real starts vs abbreviations", () => {
   assert.equal(shouldCapitalizeNext("for example, e.g. ", cfg), false);
   assert.equal(shouldCapitalizeNext("The price was 3.14 ", cfg), false);
   assert.equal(applyAutoCapitalization("dog", "It rained. ", cfg), "Dog");
-  assert.equal(applyAutoCapitalization("i", "and then ", cfg), "I");
+  // English "i" -> "I" is opt-in: it is off by default because in Ukrainian text a lone Latin "i"
+  // is a mistyped Cyrillic "і", not the pronoun.
+  assert.equal(applyAutoCapitalization("i", "and then ", cfg), "i");
+  assert.equal(applyAutoCapitalization("i", "and then ", { ...cfg, fixI: true }), "I");
   // #17: a bare leading-capital canonical ("the"→"The") applies only at a real sentence start,
   // NOT after an abbreviation like "incl." (that spurious capital was the reported bug).
   assert.equal(applyAutoCapitalization("the", "items incl. ", { ...cfg, canonical: "The" }), "the");

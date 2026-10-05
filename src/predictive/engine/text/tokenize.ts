@@ -5,19 +5,23 @@
  * "word" and a "sentence start" are.
  */
 import { buildAbbreviationSet } from "./abbreviations.ts";
+import { LETTERS, normalizeApostrophes } from "./letters.ts";
 
 /** Sentinel prepended to a sentence so the first words are ordinary n-grams. */
 export const SOS = "<s>";
 
-// Ukrainian Cyrillic range: а-я, А-Я, plus Ukrainian-specific і ї є ґ І Ї Є Ґ
-const WORD_RE = /[A-Za-zА-Яа-яЇїІіЄєҐґ][A-Za-zА-Яа-яЇїІіЄєҐґ'’.\-]*[A-Za-zА-Яа-яЇїІіЄєҐґ]|[A-Za-zА-Яа-яЇїІіЄєҐґ]/g;
+// Letters come from ./letters.ts (Latin + the Ukrainian alphabet). Inside a word we also allow
+// the apostrophe (м'яч, п'ять), dots (т.д.) and hyphens (по-українськи).
+const WORD_RE = new RegExp(`[${LETTERS}][${LETTERS}'’ʼ.\\-]*[${LETTERS}]|[${LETTERS}]`, "g");
 
 /** Normalise a surface token for model keys: lower-case, strip surrounding punctuation. */
 export function normalizeWord(w: string): string {
-  return w
+  // Apostrophe variants (', ’, ʼ) are one letter to a Ukrainian reader but different strings to
+  // a Map; the models were built with the ASCII one, so fold to it ("м’яч" must find "м'яч").
+  return normalizeApostrophes(w)
     .toLowerCase()
-    .replace(/^[^a-z0-9а-яіїєґ]+/i, "")
-    .replace(/[^a-z0-9а-яіїєґ]+$/i, "");
+    .replace(/^[^a-z0-9а-щьюяіїєґ]+/i, "")
+    .replace(/[^a-z0-9а-щьюяіїєґ]+$/i, "");
 }
 
 /** Sentence terminators, as the LSTM tokeniser emits them. */
@@ -55,7 +59,7 @@ export function endsWithTightPunct(text: string): boolean {
  * dog" and learns that a capitalised opener may follow any word at all - which is
  * what produced suggestions like "in the markets of the world The".
  */
-const LSTM_TOKEN_RE = /[A-Za-zА-Яа-яЇїІіЄєҐґ]+(?:'[A-Za-zА-Яа-яЇїІіЄєҐґ]+)?|[.,!?;:]/g;
+const LSTM_TOKEN_RE = new RegExp(`[${LETTERS}]+(?:'[${LETTERS}]+)?|[.,!?;:]`, "g");
 
 /**
  * Strip markdown / LaTeX / code / link machinery from text BEFORE it is tokenised for the
@@ -127,6 +131,9 @@ export function joinPhraseSurface(words: string[]): string {
  *  "bank of America"), so harmonizeProperCase never capitalises them. */
 const PHRASE_STOPWORDS = new Set([
   "the", "a", "an", "of", "and", "or", "for", "to", "in", "on", "at", "by", "with", "from", "as",
+  // Ukrainian: "Верховна Рада України", "Національний банк України", "Львів і Київ"
+  "і", "й", "та", "або", "чи", "в", "у", "на", "з", "із", "зі", "до", "від", "по", "за", "про",
+  "для", "при", "під", "над", "між", "через", "без", "ім", "імені",
 ]);
 
 /**
@@ -141,8 +148,8 @@ const PHRASE_STOPWORDS = new Set([
 export function harmonizeProperCase(surface: string): string {
   const parts = surface.split(" ");
   if (parts.length < 2) return surface;
-  const isCap = (w: string) => /^[A-ZА-ЯЇІЄҐ][a-zа-яіїєґ]/.test(w);
-  const isLowerContent = (w: string) => /^[a-zа-яіїєґ]+$/.test(w) && !PHRASE_STOPWORDS.has(w);
+  const isCap = (w: string) => /^[A-ZА-ЩЬЮЯІЇЄҐ][a-zа-щьюяіїєґ]/.test(w);
+  const isLowerContent = (w: string) => /^[a-zа-щьюяіїєґ']+$/.test(w) && !PHRASE_STOPWORDS.has(w);
   let changed = false;
   for (let i = parts.length - 1; i >= 1; i--) {
     if (isCap(parts[i]) && isLowerContent(parts[i - 1])) {
@@ -156,9 +163,9 @@ export function harmonizeProperCase(surface: string): string {
 /** Split raw text into the CASE-PRESERVING word+punctuation tokens the LSTM wants. */
 export function tokenizeWordsCased(text: string): string[] {
   if (typeof text !== "string") return []; // boundary guard (see sanitizeForModel)
-  // Smart quotes -> straight, so "don’t" tokenises as the trained "don't" rather
-  // than splitting into "don" + "t".
-  return text.replace(/[‘’]/g, "'").match(LSTM_TOKEN_RE) ?? [];
+  // Typographic / modifier apostrophes -> straight, so "м’яч" and "don’t" tokenise as the
+  // trained "м'яч" / "don't" rather than splitting around the mark.
+  return normalizeApostrophes(text).match(LSTM_TOKEN_RE) ?? [];
 }
 
 /** Split raw text into lower-cased word tokens (no sentence structure). */
@@ -204,20 +211,27 @@ export function isSentenceTerminator(
   // Known abbreviation (incl. dotted forms like "u.s", "e.g") - not a boundary.
   if (abbreviations.has(lower)) return false;
 
-  // Acronym / initials: "A.B.C." - letters separated by dots. Ambiguous, so
+  // Acronym / initials: "A.B.C.", "Т. Г." - letters separated by dots. Ambiguous, so
   // only treat as a boundary when the next token looks like a fresh sentence.
-  if (/^([A-Za-z]\.)+[A-Za-z]?$/.test(core)) {
+  if (INITIALS_RE.test(core)) {
+    // "Т. Г. Шевченко", "І. Франко": Ukrainian initials are written BEFORE the surname, so a
+    // capital after them is the surname, not a new sentence. (English "J. Smith" keeps the old
+    // behaviour; only Cyrillic initials are treated as non-terminal here.)
+    if (nextRawToken !== undefined && CYRILLIC_INITIALS_RE.test(core)) return false;
     return nextStartsSentence(nextRawToken);
   }
 
   return true;
 }
 
+const CYRILLIC_INITIALS_RE = /^([А-ЩЬЮЯІЇЄҐ]\.){1,3}$/;
+const INITIALS_RE = new RegExp(`^([${LETTERS}]\\.)+[${LETTERS}]?$`);
+
 function nextStartsSentence(nextRawToken: string | undefined): boolean {
   if (nextRawToken === undefined) return true; // end of text
   // A following capitalised word (that isn't itself an all-caps continuation)
   // strongly suggests a new sentence.
-  return /^[A-ZА-ЯЇІЄҐ]/.test(nextRawToken);
+  return /^[A-ZА-ЩЬЮЯЇІЄҐ]/.test(nextRawToken);
 }
 
 /**

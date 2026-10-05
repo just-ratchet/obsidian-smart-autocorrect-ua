@@ -2,6 +2,7 @@
  * Public engine API. The Obsidian plugin layer depends only on this barrel, so
  * the engine can be developed and tested independently of Obsidian.
  */
+export * from "./text/letters.ts";
 export * from "./text/tokenize.ts";
 export * from "./text/abbreviations.ts";
 export * from "./text/sentenceCase.ts";

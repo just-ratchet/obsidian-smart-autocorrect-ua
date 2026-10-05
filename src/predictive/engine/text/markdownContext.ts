@@ -133,7 +133,8 @@ export function classifyMarkdownContext(textBeforeCursor: string): MarkdownConte
   if (/^(https?:\/\/|www\.)/.test(token)) return result("linkUrl");
 
   // Tag #foo (but NOT a heading "# " at line start).
-  if (/(^|\s)#[\w/-]*$/.test(currentLine) && !/^#{1,6}\s/.test(currentLine)) {
+  // (\w is ASCII-only, so Ukrainian tags like "#нотатка" need the explicit letter class.)
+  if (/(^|\s)#[\w/\-А-ЩЬЮЯа-щьюяІіЇїЄєҐґ]*$/.test(currentLine) && !/^#{1,6}\s/.test(currentLine)) {
     return result("tag");
   }
 

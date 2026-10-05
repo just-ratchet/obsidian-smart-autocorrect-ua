@@ -13,8 +13,13 @@
  * symbol SIDE is a property of the currency, not a setting: "$100" but "100 kr".
  */
 
+import { LETTERS } from "./letters.ts";
+
+/** Non-breaking space: the Ukrainian thousands separator ("1 000 ₴"), which must never wrap. */
+export const NBSP = "\u00a0";
+
 export interface CurrencyStyle {
-  /** Groups-of-three separator: "," , "." or "" (none). */
+  /** Groups-of-three separator: "," , "." , NBSP (Ukrainian) or "" (none). */
   thousands: string;
   /** Decimal mark to emit: "." , "," , or null = keep whatever the user typed. */
   decimal: string | null;
@@ -26,11 +31,13 @@ export interface CurrencyStyle {
 
 /** Map the user settings to a full style. */
 export function currencyStyleFor(
-  thousands: "comma" | "period" | "none",
+  thousands: "comma" | "period" | "space" | "none",
   opts: { euroAfter?: boolean; useCode?: boolean } = {},
 ): CurrencyStyle {
   const base =
-    thousands === "period"
+    thousands === "space"
+      ? { thousands: NBSP, decimal: "," } // 1 000,50 - the Ukrainian convention
+      : thousands === "period"
       ? { thousands: ".", decimal: "," } //  1.000,50
       : thousands === "none"
         ? { thousands: "", decimal: null } // 1000.50 or 1000,50 (kept)
@@ -65,6 +72,16 @@ const WORD_TO_SYMBOL: Record<string, string> = {
   dong: "₫", vnd: "₫",
   rupiah: "Rp", idr: "Rp", ringgit: "RM", myr: "RM",
   hryvnia: "₴", uah: "₴",
+  // Ukrainian (all the case forms people actually type after a number)
+  гривня: "₴", гривні: "₴", гривень: "₴", гривню: "₴", грн: "₴",
+  долар: "$", долари: "$", доларів: "$", долара: "$", дол: "$",
+  євро: "€",
+  фунт: "£", фунти: "£", фунтів: "£", фунта: "£",
+  злотий: "zł", злоті: "zł", злотих: "zł",
+  юань: "¥", юані: "¥", юанів: "¥", єна: "¥", єни: "¥", єн: "¥",
+  франк: "Fr", франки: "Fr", франків: "Fr",
+  крона: "kr", крони: "kr", крон: "kr",
+  біткоїн: "₿", біткоїни: "₿", біткоїнів: "₿",
   aed: "AED", sar: "SAR", qar: "QAR",
   btc: "₿", bitcoin: "₿",
 };
@@ -100,6 +117,15 @@ const WORD_TO_CODE: Record<string, string> = {
   dong: "VND", vnd: "VND",
   rupiah: "IDR", idr: "IDR", ringgit: "MYR", myr: "MYR",
   hryvnia: "UAH", uah: "UAH",
+  гривня: "UAH", гривні: "UAH", гривень: "UAH", гривню: "UAH", грн: "UAH",
+  долар: "USD", долари: "USD", доларів: "USD", долара: "USD", дол: "USD",
+  євро: "EUR",
+  фунт: "GBP", фунти: "GBP", фунтів: "GBP", фунта: "GBP",
+  злотий: "PLN", злоті: "PLN", злотих: "PLN",
+  юань: "CNY", юані: "CNY", юанів: "CNY", єна: "JPY", єни: "JPY", єн: "JPY",
+  франк: "CHF", франки: "CHF", франків: "CHF",
+  крона: "SEK", крони: "SEK", крон: "SEK",
+  біткоїн: "BTC", біткоїни: "BTC", біткоїнів: "BTC",
   aed: "AED", sar: "SAR", qar: "QAR",
   btc: "BTC", bitcoin: "BTC",
 };
@@ -162,7 +188,7 @@ export function parseAmount(raw: string, style: CurrencyStyle = { thousands: ","
   // Which character marks the decimal here?
   let decChar: string | null;
   if (style.thousands === ",") decChar = ".";
-  else if (style.thousands === ".") decChar = ",";
+  else if (style.thousands === "." || style.thousands === NBSP) decChar = ",";
   else {
     const lastDot = body.lastIndexOf("."), lastComma = body.lastIndexOf(",");
     decChar = lastDot < 0 && lastComma < 0 ? null : lastDot > lastComma ? "." : ",";
@@ -228,6 +254,9 @@ export interface CurrencyOptions {
   style: CurrencyStyle;
 }
 
+/** "1000 euros" / "1000 гривень": a number, optional space, then a (Latin or Ukrainian) word. */
+const WORD_AFTER_NUMBER = new RegExp(`(-?\\d[\\d.,]*)\\s*([${LETTERS}]+)$`);
+
 /**
  * Look at the text just before the caret (any boundary character already removed) and, if it ends in
  * a currency expression, return the slice to replace and its replacement. `start` is the index in
@@ -242,7 +271,7 @@ export function detectCurrency(before: string, opts: CurrencyOptions): { start: 
   // Case A - number then a spelled-out currency word: "1000 dollars" -> "$1,000". `\s*` allows zero
   // spaces, so "1000euro" works too; an optional leading "-" gives a negative amount.
   if (opts.wordToSymbol) {
-    const m = before.match(/(-?\d[\d.,]*)\s*([A-Za-z]+)$/);
+    const m = before.match(WORD_AFTER_NUMBER);
     if (m) {
       const symbol = WORD_TO_SYMBOL[m[2].toLowerCase()];
       const start = before.length - m[0].length;
@@ -294,7 +323,7 @@ export function currencyProposal(before: string, opts: CurrencyOptions): { start
   const full = detectCurrency(before, opts);
   if (full) return { start: full.start, text: full.text, symbol: badgeOf(full.text) };
   if (opts.wordToSymbol) {
-    const m = before.match(/(-?\d[\d.,]*)\s*([A-Za-z]+)$/);
+    const m = before.match(WORD_AFTER_NUMBER);
     if (m && !WORD_TO_SYMBOL[m[2].toLowerCase()] && isCurrencyWordPrefix(m[2])) {
       const symbol = firstSymbolForPrefix(m[2]);
       const start = before.length - m[0].length;
@@ -310,7 +339,7 @@ export function currencyProposal(before: string, opts: CurrencyOptions): { start
 /** The char before the expression must not be a letter/digit/dot (so we don't slice mid-token). */
 function boundaryOk(before: string, start: number): boolean {
   if (start <= 0) return true;
-  return !/[\w.]/.test(before[start - 1]);
+  return !new RegExp(`[\\w.${LETTERS}]`).test(before[start - 1]);
 }
 
 /** Escape a symbol for safe insertion into a RegExp alternation. */

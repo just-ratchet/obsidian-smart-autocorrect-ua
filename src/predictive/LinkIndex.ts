@@ -5,7 +5,7 @@
  * to a note that actually exists, so suggestions can't be hallucinated.
  */
 import type { App, TFile } from "obsidian";
-import { findLinkSpans, termFreq, type LinkSpan, type LinkTarget } from "./engine/index";
+import { ALNUM, findLinkSpans, termFreq, type LinkSpan, type LinkTarget } from "./engine/index";
 
 export class LinkIndex {
   private app: App;
@@ -98,7 +98,7 @@ export class LinkIndex {
     const tf = termFreq(text);
     const counts = new Map<string, number>();
     // termFreq drops hyphens, so also index bare word tokens for multi-word tag leaves.
-    for (const w of text.toLowerCase().match(/[a-z0-9][a-z0-9-]{2,}/g) ?? [])
+    for (const w of text.toLowerCase().match(new RegExp(`[${ALNUM}][${ALNUM}-]{2,}`, "g")) ?? [])
       counts.set(w, (counts.get(w) ?? 0) + 1);
 
     const scored: { tag: string; count: number; score: number }[] = [];

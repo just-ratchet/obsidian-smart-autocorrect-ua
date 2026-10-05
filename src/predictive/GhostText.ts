@@ -30,6 +30,8 @@ import {
   upperFromText,
   startsWithTightPunct,
   suggestionCase,
+  WORD_AT_END,
+  AFTER_WORD_CHAR,
 } from "./engine/index";
 import { contextWords } from "./context";
 import { isIndentEdit } from "./tabIndent";
@@ -122,11 +124,11 @@ function ghostQuery(
   if (settings.markdownAware && classifyMarkdownContext(before).suppressPrediction) return null;
 
   const line = before.slice(before.lastIndexOf("\n") + 1);
-  const wm = line.match(/([A-Za-zА-Яа-яЇїІіЄєҐґ][A-Za-zА-Яа-яЇїІіЄєҐґ'’-]*)$/);
+  const wm = line.match(WORD_AT_END);
   const query = wm ? wm[1] : "";
   // A letter run glued to a number is an ordinal / unit suffix ("19th", "5km"), not a word.
   if (query.length > 0 && /\d/.test(line[line.length - query.length - 1] ?? "")) return null;
-  if (query.length === 0 && !/\w\s$/.test(line)) return null;
+  if (query.length === 0 && !AFTER_WORD_CHAR.test(line)) return null;
   if (query.length > 0 && query.length < settings.minChars) return null;
   return { ctx: contextWords(before, settings.extraAbbreviations), query, pos, before };
 }

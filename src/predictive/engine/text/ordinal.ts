@@ -43,5 +43,5 @@ export function fixNumericSuffix(before: string): { start: number; text: string 
 /** The char before the expression must not be a letter or digit (so we don't slice mid-token). */
 function boundaryOk(before: string, start: number): boolean {
   if (start <= 0) return true;
-  return !/[A-Za-z0-9]/.test(before[start - 1]);
+  return !/[A-Za-zА-ЩЬЮЯа-щьюяІіЇїЄєҐґ0-9]/.test(before[start - 1]);
 }

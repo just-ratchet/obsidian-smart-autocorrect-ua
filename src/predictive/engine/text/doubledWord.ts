@@ -1,5 +1,5 @@
 /**
- * Accidental doubled-word detection ("the the" -> "the").
+ * Accidental doubled-word detection ("the the" -> "the", "і і" -> "і").
  *
  * Only a curated set of function words is ever removed, because many doublings are
  * grammatically valid and must be left alone: "had had" (past perfect), "that that"
@@ -19,6 +19,18 @@ export const NEVER_DOUBLED: ReadonlySet<string> = new Set([
   "is", "are", "was", "were", "be", "am",
   // pronouns / demonstratives
   "it", "its", "we", "they", "this", "these", "those", "i",
+
+  // --- Ukrainian ---
+  // Same rule: only words with no valid doubled use. Deliberately NOT here: "та" ("та та жінка"
+  // = "that woman"), "що", "як", "не", "ні", "так", "ще", "дуже", "тому", "вона/воно" in
+  // reduplication, and anything that can be repeated for emphasis or as a name.
+  // prepositions
+  "в", "у", "на", "з", "із", "зі", "до", "від", "по", "за", "про", "для", "при", "під", "над",
+  "між", "через", "без", "біля", "після", "перед", "серед",
+  // conjunctions / particles
+  "і", "й", "або", "але", "чи", "щоб", "бо", "проте", "однак",
+  // pronouns / demonstratives
+  "я", "ми", "він", "вона", "вони", "це", "цей", "ця", "ці", "цього", "цьому", "його", "її", "їх",
 ]);
 
 /**

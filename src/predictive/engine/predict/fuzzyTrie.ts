@@ -13,7 +13,7 @@
  * personalised confusion model flows straight through.
  */
 import type { CostModel } from "../channel/costModel.ts";
-import { phoneticCost } from "../channel/phonetic.ts";
+import { phoneticCost, phoneticKey } from "../channel/phonetic.ts";
 
 class TrieNode {
   children = new Map<string, TrieNode>();
@@ -29,6 +29,9 @@ export interface Neighbour {
 export class FuzzyTrie {
   private root = new TrieNode();
   private words: string[] = [];
+  /** phonetic key -> words, built on first use. phoneticCost is Infinity unless the keys are
+   *  EQUAL, so looking up the typed word's key finds exactly the words the old full scan did. */
+  private byPhonetic: Map<string, string[]> | null = null;
 
   constructor(words?: Iterable<string>) {
     if (words) for (const w of words) this.insert(w);
@@ -49,6 +52,7 @@ export class FuzzyTrie {
     if (node.word === null) {
       node.word = w;
       this.words.push(w);
+      this.byPhonetic = null; // a new word invalidates the index
     }
   }
 
@@ -156,7 +160,17 @@ export class FuzzyTrie {
 
     // Optional phonetic recall boost (whole-word only).
     if (opts.usePhonetic && mode === "full") {
-      for (const w of this.words) {
+      if (!this.byPhonetic) {
+        this.byPhonetic = new Map();
+        for (const w of this.words) {
+          const k = phoneticKey(w);
+          if (!k) continue;
+          const list = this.byPhonetic.get(k);
+          if (list) list.push(w);
+          else this.byPhonetic.set(k, [w]);
+        }
+      }
+      for (const w of this.byPhonetic.get(phoneticKey(t)) ?? []) {
         if (found.has(w)) continue;
         const pc = phoneticCost(t, w);
         if (pc <= maxCost) push(w, pc);
