@@ -1,7 +1,7 @@
 {
   "id": "smart-autocorrect-ua",
   "name": "Smart Autocorrect UA",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "minAppVersion": "1.11.4",
   "description": "Ukrainian next-word prediction, typo correction as you type, and link suggestions for your notes. Runs entirely on your device.",
   "author": "Ukrainian fork of Smart Autocorrect by Zangeti",
