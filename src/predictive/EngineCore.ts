@@ -27,6 +27,7 @@ import {
   decideCorrection,
   decideRespace,
   tokenizeWords,
+  normalizeApostrophes,
   joinPhraseSurface,
   harmonizeProperCase,
   isProfane,
@@ -532,6 +533,9 @@ export class EngineCore {
 
   getSuggestions(context: string[], typed: string, k: number, includePhrases = true): SuggestItem[] {
     if (!this.cache) return [];
+    // The vocabularies spell м'яч with the ASCII apostrophe; a typed "м’" (typographic) or "мʼ"
+    // would otherwise match nothing, and the suggestions would vanish the moment it is typed.
+    typed = normalizeApostrophes(typed);
     let seeds: { word: string; score: number }[];
     if (typed) {
       seeds = this.getCandidates(context, typed, k).map((c) => ({ word: c.word, score: c.score }));
@@ -696,7 +700,21 @@ export class EngineCore {
     return out;
   }
 
-  decide(typed: string, context: string[]): CorrectionDecision {
+  decide(typedRaw: string, context: string[]): CorrectionDecision {
+    // Look the word up with the ASCII apostrophe the vocabularies use, then hand the answer back in
+    // the user's own style: someone who types "м’яч" with a typographic apostrophe must not get a
+    // straight one back (and the controller compares `from` with what is in the editor).
+    const typed = normalizeApostrophes(typedRaw);
+    const decision = this.decideNormalised(typed, context);
+    const style = /[’ʼ]/.exec(typedRaw)?.[0];
+    return {
+      ...decision,
+      from: typedRaw,
+      to: style && decision.correct ? decision.to.replace(/'/g, style) : decision.correct ? decision.to : typedRaw,
+    };
+  }
+
+  private decideNormalised(typed: string, context: string[]): CorrectionDecision {
     if (!this.midModel || !this.index)
       return { correct: false, from: typed, to: typed, reason: "not-ready" };
     // The user typed a profane/NSFW word deliberately - never "correct" it away, even if
@@ -716,6 +734,7 @@ export class EngineCore {
       fuzzyStrength: this.settings.fuzzyStrength,
       phoneticStrength: this.settings.phoneticStrength,
       isRealWord: (w) => this.isRealWord(w),
+      skipLatin: true, // the models are Ukrainian: English words in a note are not ours to judge
     });
     // Never autocorrect a benign typo INTO a profane/NSFW word (the target can be a
     // split like "a lot", so check the whole surface).

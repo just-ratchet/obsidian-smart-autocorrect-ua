@@ -44,6 +44,21 @@ export class LowercaseModel implements LanguageModel {
     this.inner = inner;
   }
 
+  /**
+   * The spelling `inner` actually knows for a word with an apostrophe. Models built before
+   * apostrophes were normalised hold the three variants as SEPARATE words ("об'єкт" 2.5k times,
+   * "об’єкт" 1.7k, "обʼєкт" 19), and a few exist only in the typographic form ("в’їзд"). Always
+   * asking for the ASCII one would call those unknown, so prefer ASCII and fall back to the others.
+   */
+  private spelled(w: string): string {
+    if (!w.includes("'") || this.inner.hasWord(w)) return w;
+    for (const mark of ["’", "ʼ"]) {
+      const alt = w.replace(/'/g, mark);
+      if (this.inner.hasWord(alt)) return alt;
+    }
+    return w;
+  }
+
   private ctxFor(context: string[]): string[] {
     return this.memo.get(context, (c) => {
       // Back to the last sentence terminator: the n-gram's counts are per-sentence,
@@ -55,20 +70,20 @@ export class LowercaseModel implements LanguageModel {
       const out: string[] = [];
       for (let i = start; i < c.length; i++) {
         const n = normalizeWord(c[i]); // drops punctuation: n-gram is word-only
-        if (n) out.push(n);
+        if (n) out.push(this.spelled(n));
       }
       return out;
     });
   }
 
   logProb(word: string, context: string[]): number {
-    return this.inner.logProb(normalizeWord(word), this.ctxFor(context));
+    return this.inner.logProb(this.spelled(normalizeWord(word)), this.ctxFor(context));
   }
   predict(context: string[], k: number): Scored[] {
     return this.inner.predict(this.ctxFor(context), k);
   }
   hasWord(word: string): boolean {
-    return this.inner.hasWord(normalizeWord(word));
+    return this.inner.hasWord(this.spelled(normalizeWord(word)));
   }
   vocabulary(): IterableIterator<string> {
     return this.inner.vocabulary();

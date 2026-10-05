@@ -564,8 +564,9 @@ export class PredictiveSuggest extends EditorSuggest<SuggestItem> {
     if (startsWithTightPunct(insert)) return insert;
     const line = editor.getLine(at.line);
     const prev = line[at.ch - 1];
-    // No separating space after an opening bracket / quote - "(" hugs the word it wraps.
-    if (prev && /[([{"'“‘]/.test(prev)) return insert;
+    // No separating space after an opening bracket / quote - "(" hugs the word it wraps. Includes the
+    // Ukrainian opening quotes «ялинка» and „лапки“, and the modifier-letter apostrophe (м'яч).
+    if (prev && /[([{"'“‘«„ʼ]/.test(prev)) return insert;
     return prev && !/\s/.test(prev) ? " " + insert : insert;
   }
 

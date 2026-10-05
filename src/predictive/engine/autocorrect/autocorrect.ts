@@ -17,9 +17,16 @@ import { type Candidate, type CandidateIndex, predict } from "../predict/predict
 import type { Reranker } from "../predict/reranker.ts";
 import { RealWordCorrector, sequenceLogProb, suggestSplit } from "../predict/segmentation.ts";
 import { fixContraction } from "../text/caseFix.ts";
-import { isFragmentPiece } from "../text/letters.ts";
+import { apostropheVariants, isFragmentPiece, repairHomoglyphs } from "../text/letters.ts";
 
 export interface AutocorrectConfig {
+  /**
+   * Leave tokens with no Cyrillic letter alone. The Ukrainian models know no English words, so a
+   * Latin token in a Ukrainian note ("git", "tea", an identifier, a brand) is never a misspelling
+   * we can judge - without this it gets "corrected" to whatever Latin fragment the vocabulary
+   * happens to hold ("git" → "gut"). Off by default so the English tests keep their behaviour.
+   */
+  skipLatin?: boolean;
   /**
    * Information-gain gate (nats): the SOLE strength control. We replace the typed
    * word only if its Shannon surprisal exceeds the best candidate's by at least
@@ -241,6 +248,34 @@ export function decideCorrection(
   // by the real-word / proper-noun guards instead.) Cyrillic capitals count: ЗСУ, НАТО, ДТП.
   if (acronymCore.length >= 2 && acronymCore === acronymCore.toUpperCase() && /[A-ZА-ЩЬЮЯІЇЄҐ]/.test(acronymCore))
     return no("acronym");
+
+  // 0a. Latin look-alike letters inside a Ukrainian word ("сьогоднi" with a Latin i). Deterministic:
+  // the token is mixed-script, so it is not a real word in any language, and the all-Cyrillic
+  // spelling is only offered when it IS a real word.
+  const homoglyphFix = repairHomoglyphs(typed);
+  if (homoglyphFix) {
+    const fixedReal = cfg.isRealWord ? cfg.isRealWord(homoglyphFix) : model.hasWord(homoglyphFix) || (cfg.oracleReal?.(homoglyphFix) ?? false);
+    if (fixedReal) return yes(homoglyphFix, "homoglyph");
+  }
+
+  if (cfg.skipLatin && !/[а-щьюяіїєґ]/.test(typed)) return no("latin-token");
+
+  // 0a'. The dropped Ukrainian apostrophe ("мяч" -> "м'яч", "сімя" -> "сім'я", "підїзд" -> "під'їзд").
+  // Only when the typed spelling is NOT a word the model knows and the apostrophe spelling IS: a
+  // legitimate apostrophe-less word ("мрія", "прямо") has no apostrophe variant in the vocabulary.
+  if (!model.hasWord(typed)) {
+    let bestV: string | null = null;
+    let bestLp = -Infinity;
+    for (const v of apostropheVariants(typed)) {
+      if (!model.hasWord(v)) continue;
+      const lp = model.logProb(v, context);
+      if (lp > bestLp) {
+        bestLp = lp;
+        bestV = v;
+      }
+    }
+    if (bestV) return yes(bestV, "apostrophe");
+  }
 
   // 0. contraction failsafe (deterministic): "dont" -> "don't".
   const contraction = fixContraction(typed);

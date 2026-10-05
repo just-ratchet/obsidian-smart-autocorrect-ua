@@ -196,12 +196,14 @@ export function isSentenceTerminator(
   nextRawToken: string | undefined,
   abbreviations: Set<string>,
 ): boolean {
-  if (!/[.!?…]["')\]]?$/.test(tokenWithPeriod)) return false;
+  // A closing quote/bracket may follow the mark, including the Ukrainian «ялинки» and “лапки”:
+  // «Привіт!» is the end of a sentence just as "Hello!" is.
+  if (!/[.!?…]["')\]»”’]?$/.test(tokenWithPeriod)) return false;
 
   // ! and ? are (almost) always terminators.
-  if (/[!?…]["')\]]?$/.test(tokenWithPeriod)) return true;
+  if (/[!?…]["')\]»”’]?$/.test(tokenWithPeriod)) return true;
 
-  const core = tokenWithPeriod.replace(/["')\]]+$/, "");
+  const core = tokenWithPeriod.replace(/["')\]»”’]+$/, "");
   const withoutDot = core.replace(/\.$/, "");
   const lower = withoutDot.toLowerCase();
 

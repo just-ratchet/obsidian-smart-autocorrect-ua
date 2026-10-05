@@ -77,7 +77,7 @@ export class LinkIndex {
     out.sort((a, b) => {
       const ap = a.display.toLowerCase().startsWith(q) ? 0 : 1;
       const bp = b.display.toLowerCase().startsWith(q) ? 0 : 1;
-      return ap !== bp ? ap - bp : a.display.localeCompare(b.display);
+      return ap !== bp ? ap - bp : a.display.localeCompare(b.display, ["uk", "en"]);
     });
     return out.slice(0, limit);
   }
