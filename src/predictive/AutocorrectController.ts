@@ -33,6 +33,7 @@ import {
   type SentenceCaseConfig,
 } from "./engine/index";
 import { contextWords } from "./context";
+import { isUndoKey } from "./keys";
 import type { PredictiveEngineController } from "./PredictiveEngineController";
 import type { PredictiveSettings } from "./PredictiveSettings";
 
@@ -218,7 +219,7 @@ export class AutocorrectController {
     if (MODIFIER_KEYS.has(evt.key)) return;
 
     // One-shot revert of the last autocorrect.
-    if (this.justCorrected && (evt.ctrlKey || evt.metaKey) && evt.key.toLowerCase() === "z") {
+    if (this.justCorrected && (evt.ctrlKey || evt.metaKey) && !evt.shiftKey && isUndoKey(evt)) {
       const editor = this.activeEditor();
       if (editor && this.revertLast(editor)) {
         this.justCorrected = false;

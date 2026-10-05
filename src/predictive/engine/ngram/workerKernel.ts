@@ -89,9 +89,9 @@ export function buildSerializedCountsFromDocs(docs: string[]): {
     for (const tok of raw) {
       const n = norm(tok);
       if (n) sentence.push(n);
-      if (/[.!?…]["')\]]?$/.test(tok)) {
-        const stem = tok.replace(/["')\]]+$/, "").replace(/\.$/, "").toLowerCase();
-        if (/[!?…]/.test(tok) || (!ABBR.has(stem) && !/\d$/.test(stem) && !/^([a-zа-щьюяіїєґ]\.)+[a-zа-щьюяіїєґ]?$/i.test(tok.replace(/["')\]]+$/, "")))) {
+      if (/[.!?…]["')\]»”’]?$/.test(tok)) {
+        const stem = tok.replace(/["')\]»”’]+$/, "").replace(/\.$/, "").toLowerCase();
+        if (/[!?…]/.test(tok) || (!ABBR.has(stem) && !/\d$/.test(stem) && !/^([a-zа-щьюяіїєґ]\.)+[a-zа-щьюяіїєґ]?$/i.test(tok.replace(/["')\]»”’]+$/, "")))) {
           flush();
         }
       }

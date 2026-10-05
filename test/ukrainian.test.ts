@@ -41,7 +41,13 @@ import {
   DEFAULT_CHANNEL,
   buildModelFromText,
   decideRespace,
+  repairHomoglyphs,
+  apostropheVariants,
+  decideCorrection,
+  Engine,
 } from "../src/predictive/engine/index.ts";
+
+import { isUndoKey } from "../src/predictive/keys.ts";
 
 const cfg = defaultSentenceCaseConfig();
 
@@ -221,4 +227,47 @@ test("respacing: a lone Ukrainian preposition is never glued to the next word", 
   const model = buildModelFromText(corpus);
   assert.equal(decideRespace(model, "в", "ікно", ["вона", "дивиться"]), null);
   assert.equal(decideRespace(model, "з", "мінити", []), null);
+});
+
+test("Latin look-alikes inside a Ukrainian word are repaired; English words are left alone", () => {
+  assert.equal(repairHomoglyphs("сьогоднi"), "сьогодні");
+  assert.equal(repairHomoglyphs("укpаїна"), "україна");
+  assert.equal(repairHomoglyphs("привiт"), "привіт");
+  assert.equal(repairHomoglyphs("to"), null, "a pure-Latin word is English, not a typo for «то»");
+  assert.equal(repairHomoglyphs("привіт"), null, "already clean");
+  assert.equal(repairHomoglyphs("приbіт"), null, "b has no Cyrillic look-alike: not repairable");
+});
+
+test("a dropped apostrophe is offered back at the spots Ukrainian spelling puts one", () => {
+  assert.ok(apostropheVariants("мяч").includes("м'яч"));
+  assert.ok(apostropheVariants("сімя").includes("сім'я"));
+  assert.ok(apostropheVariants("підїзд").includes("під'їзд"));
+  assert.ok(apostropheVariants("зєднання").includes("з'єднання"));
+  assert.deepEqual(apostropheVariants("м'яч"), [], "already has one");
+  assert.deepEqual(apostropheVariants("яблуко"), [], "word-initial я is never preceded by an apostrophe");
+});
+
+test("autocorrect: restores the apostrophe, repairs look-alikes, and leaves Latin tokens alone", () => {
+  const corpus = Array.from({ length: 30 }, () => "Хлопчик кинув м'яч у сім'я їла вдома. Вона любить прямо йти.").join("\n");
+  const e = Engine.fromText(corpus);
+  const run = (typed: string, skipLatin = true) => decideCorrection(e.model, e.index, typed, [], { skipLatin });
+  assert.deepEqual([run("мяч").correct, run("мяч").to], [true, "м'яч"]);
+  assert.equal(run("прямо").correct, false, "a word that needs no apostrophe is not touched");
+  assert.equal(run("git").reason, "latin-token");
+  assert.equal(run("git").correct, false);
+});
+
+test("Ctrl-Z is recognised on the Ukrainian layout, where the Z key types «я»", () => {
+  assert.equal(isUndoKey({ key: "z", code: "KeyZ" }), true);
+  assert.equal(isUndoKey({ key: "я", code: "KeyZ" }), true, "Ukrainian layout, code available");
+  assert.equal(isUndoKey({ key: "Я" }), true, "Ukrainian layout, no code");
+  assert.equal(isUndoKey({ key: "x", code: "KeyX" }), false);
+  assert.equal(isUndoKey({ key: "ч", code: "KeyX" }), false);
+});
+
+test("a sentence that ends inside «ялинки» or “лапки” still ends: the next one is capitalised", () => {
+  assert.equal(shouldCapitalizeNext("Він сказав: «Привіт!» ", cfg), true);
+  assert.equal(shouldCapitalizeNext("Вона запитала: «Де ти?» ", cfg), true);
+  assert.equal(shouldCapitalizeNext("Це «слово» ", cfg), false, "a quoted word is not a sentence end");
+  assert.equal(shouldCapitalizeNext("Він сказав: «Привіт», ", cfg), false);
 });

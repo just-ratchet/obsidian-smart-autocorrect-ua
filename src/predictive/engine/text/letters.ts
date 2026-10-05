@@ -55,3 +55,49 @@ export function isFragmentPiece(piece: string): boolean {
   if (/^['’ʼ-]|['’ʼ-]$/.test(piece)) return true;
   return piece.length === 1 && !SINGLE_LETTER_WORDS.has(piece.toLowerCase());
 }
+
+/** Latin letters that look identical to a Cyrillic one (lower case; callers lower-case first). */
+const HOMOGLYPHS: Record<string, string> = {
+  a: "а", c: "с", e: "е", i: "і", o: "о", p: "р", x: "х", y: "у", k: "к", m: "м", t: "т",
+};
+
+/**
+ * Repair a token that mixes scripts by typing Latin look-alikes inside a Ukrainian word
+ * ("сьогоднi" with a Latin i, "Укpаїна" with a Latin p) - the commonest Ukrainian typing slip, and
+ * invisible to the eye. Returns the all-Cyrillic spelling, or null when the token is not such a
+ * case: pure Cyrillic, pure Latin (an English word - "to" must NOT become "то"), or a mix with a
+ * Latin letter that has no look-alike. Case is the caller's business (pass lower case).
+ */
+export function repairHomoglyphs(word: string): string | null {
+  if (!/[а-щьюяіїєґ]/.test(word) || !/[a-z]/.test(word)) return null;
+  let out = "";
+  for (const ch of word) {
+    if (/[a-z]/.test(ch)) {
+      const h = HOMOGLYPHS[ch];
+      if (!h) return null;
+      out += h;
+    } else out += ch;
+  }
+  return out;
+}
+
+/**
+ * Ukrainian writes an apostrophe before я, ю, є, ї after б п в м ф р ("м'яч", "п'ять", "сім'я") and
+ * after a prefix ending in a consonant ("під'їзд", "об'єкт", "з'єднання"). It is also the single most
+ * commonly dropped character, because it lives on a different key. This lists the spellings with ONE
+ * apostrophe inserted at each such spot; the caller keeps the one the language model knows.
+ * (Word-initial letters are never preceded by an apostrophe, so position 0 and 1 are skipped.)
+ */
+export function apostropheVariants(word: string): string[] {
+  const out: string[] = [];
+  if (/['’ʼ]/.test(word)) return out;
+  // prefix-final consonants that take an apostrophe before я ю є ї: б п в м ф р, and з/д/н/к in
+  // prefixes (з'єднання, під'їзд, від'їзд, об'єкт, роз'яснення, к'язь is not a word) - the caller's
+  // vocabulary check is what keeps the spurious ones out.
+  for (let i = 1; i < word.length; i++) {
+    if (!/[яюєї]/.test(word[i])) continue;
+    if (!/[бпвмфрзднкс]/.test(word[i - 1])) continue;
+    out.push(word.slice(0, i) + "'" + word.slice(i));
+  }
+  return out;
+}
