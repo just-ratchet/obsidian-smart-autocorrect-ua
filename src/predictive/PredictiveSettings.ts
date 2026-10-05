@@ -8,9 +8,7 @@ import { t } from "./i18n";
 import type { PaneGroup } from "./settingsPane";
 import { parseExcludeList } from "./engine/index";
 import type { KeyboardLayoutName } from "./engine/index";
-import { BMC_QR_DATA_URI } from "./bmcQr";
 
-const BMC_URL = "https://buymeacoffee.com/zangeti";
 
 /**
  * Keys offered for accepting a suggestion.
@@ -350,9 +348,9 @@ export function buildPredictiveSettingGroups(
         }),
       );
 
-  b.group("Smart predictions & autocorrect");
+  b.group(t("ui.msg.SmartPredictionsAutocorrect"));
   b.note(
-    "Predicts your next word, fixes typos as you type, and completes whole phrases. Press Tab to accept. Everything runs on your device.",
+    t("ui.msg.PredictsNextWordFixesTypos"),
   );
 
   // --- master switch + resets, right at the top ---------------------------
@@ -391,7 +389,7 @@ export function buildPredictiveSettingGroups(
     // Writing stats + support, right below the reset buttons. The headline number, the button to the
     // full dashboard, and the buy-me-a-coffee block travel together as one section.
     const topStats = personalization.getStats();
-    b.custom("Your writing stats", (el) => {
+    b.custom(t("ui.msg.WritingStats"), (el) => {
       const saved = el.createEl("p", { cls: "setting-item-description" });
       saved.createEl("strong", { text: `⌨️ ${topStats.charsSaved.toLocaleString()}` });
       const hrs =
@@ -405,20 +403,12 @@ export function buildPredictiveSettingGroups(
     // Support sits BETWEEN the headline number and the See/Reset-stats menu, so the
     // buy-me-a-coffee ask reads as part of the stats section rather than trailing after
     // the reset controls.
-    b.custom("Support, buy me a coffee", (el) => {
-      const support = el.createDiv({ cls: "smart-autocorrect-support" });
-      const supportText = support.createEl("p", { cls: "setting-item-description" });
-      supportText.appendText("Enjoying the plugin? You can ");
-      const link = supportText.createEl("a", { text: "buy me a coffee ☕", href: BMC_URL });
-      link.setAttribute("target", "_blank");
-      link.setAttribute("rel", "noopener");
-      supportText.appendText(", or scan the code.");
-      const qr = support.createEl("img", { cls: "smart-autocorrect-qr" });
-      qr.src = BMC_QR_DATA_URI;
-      qr.alt = "Buy Me a Coffee QR code";
-      qr.width = 130;
-      qr.height = 130;
-    });
+    // No donation ask here. Upstream's pane solicited for ITS author's Buy Me a Coffee;
+
+    // shipping that in a fork would collect on someone else's behalf from users who
+
+    // installed this one, and the rules allow a fundingUrl only for the plugin's own author.
+
     row()
       .setName(t("ui.name.WritingStats"))
       .setDesc(t("ui.desc.StreakTimeSavedMilestonesWhat"))
@@ -430,11 +420,11 @@ export function buildPredictiveSettingGroups(
   }
 
   if (!settings.pluginEnabled) {
-    b.note("Smart Autocorrect is turned off. Turn the master switch back on to change the options below.");
+    b.note(t("ui.msg.SmartAutocorrectTurnedOffTurn"));
     return b.groups; // nothing else is active, so don't show a wall of dead options
   }
 
-  b.group("Predictions & autocorrect");
+  b.group(t("ui.msg.PredictionsAutocorrect"));
 
   row()
     .setName(t("ui.name.PredictiveTextSuggestNextWord"))
@@ -641,8 +631,8 @@ export function buildPredictiveSettingGroups(
     );
 
   // --- matching quality ---------------------------------------------------
-  b.group("Accuracy boosters", true);
-  b.note("Each makes corrections smarter for a different kind of mistake. All recommended on.");
+  b.group(t("ui.msg.AccuracyBoosters"), true);
+  b.note(t("ui.msg.EachMakesCorrectionsSmarterDifferent"));
   row()
     .setName(t("ui.name.KeyboardTypoStrength"))
     .setDesc('How much nearby-key slips are trusted as typos ("teh" → "the"). Higher = more keyboard corrections; 0 = ignore keyboard geometry entirely.')
@@ -757,8 +747,8 @@ export function buildPredictiveSettingGroups(
     );
 
   // --- convenience: small auto-formatting helpers ------------------------
-  b.group("Formatting", true);
-  b.note("Small formatting helpers that tidy up what you type. Each is independent.");
+  b.group(t("ui.msg.Formatting"), true);
+  b.note(t("ui.msg.SmallFormattingHelpersTidyUp"));
   toggle(
     "Tidy currency amounts",
     'Once you finish an amount that has a currency symbol, groups the thousands and moves the symbol to where that currency normally sits ("$1000" becomes "$1,000", "1000$" becomes "$1,000").',
@@ -788,8 +778,8 @@ export function buildPredictiveSettingGroups(
     .setDesc(t("ui.desc.EuroOneSignWhoseSide"))
     .addDropdown((d) =>
       d
-        .addOption("before", "€100 (before)")
-        .addOption("after", "100 € (after)")
+        .addOption("before", t("ui.msg.100Before"))
+        .addOption("after", t("ui.msg.100After"))
         .setValue(settings.currencyEuroPlacement)
         .onChange((v) => {
           settings.currencyEuroPlacement = v as PredictiveSettings["currencyEuroPlacement"];
@@ -808,7 +798,7 @@ export function buildPredictiveSettingGroups(
   );
 
   // --- markdown / performance --------------------------------------------
-  b.group("Links & tags", true);
+  b.group(t("ui.msg.LinksTags"), true);
   // One dropdown drives the two linking features so you can pick exactly what you want:
   //  - "tooltips": the ambient link icons beside a block (suggestLinks)
   //  - "menu": our [[ picker replacing Obsidian's (replaceLinkMenu)
@@ -899,11 +889,11 @@ export function buildPredictiveSettingGroups(
     "syncFrontmatterTags",
   );
   b.note(
-    "Links go inline where a concept is mentioned; tags are typed with #. For a full list at " +
+    t("ui.msg.LinksGoInlineWhereConcept") +
       "once, run \"Suggest links in this note\" or \"Suggest tags for this note\" (Ctrl/Cmd-P).",
   );
 
-  b.group("Where it works & performance", true);
+  b.group(t("ui.msg.WhereWorksPerformance"), true);
   toggle(
     "Don't touch code, math, links & tags",
     "Never predict or autocorrect inside code blocks, LaTeX math, [[wikilinks]], URLs, #tags, or frontmatter, so it can't corrupt them.",

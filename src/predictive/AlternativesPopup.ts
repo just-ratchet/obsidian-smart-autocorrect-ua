@@ -13,6 +13,7 @@
  * sees them; the editor never loses focus (rows accept on mousedown with preventDefault).
  */
 import type { Editor, EditorPosition } from "obsidian";
+import { t } from "./i18n";
 import type { EditorView } from "@codemirror/view";
 
 export interface AlternativesTarget {
@@ -63,7 +64,7 @@ export class AlternativesPopup {
       const left = row.createSpan({ cls: "predictive-left" });
       left.createSpan({ cls: "predictive-mark", text: "✦" });
       left.createSpan({ text: word });
-      row.createSpan({ cls: "predictive-kind", text: "✎ alt" });
+      row.createSpan({ cls: "predictive-kind", text: t("ui.msg.Alt") });
       // mousedown, not click: preventDefault keeps focus in the editor so the replacement lands
       // where the caret is.
       row.addEventListener("mousedown", (ev) => {

@@ -29,11 +29,11 @@ export class DictionaryModal extends Modal {
     const el = this.contentEl;
     el.empty();
     el.addClass("smart-autocorrect-dict-modal");
-    el.createEl("h2", { text: "Personal dictionary" });
+    el.createEl("h2", { text: t("ui.msg.PersonalDictionary") });
     el.createEl("p", {
       cls: "setting-item-description",
       text:
-        "Words that are always correct as written, so they're never autocorrected or re-cased. " +
+        t("ui.msg.WordsAlwaysCorrectAsWritten") +
         "Case-sensitive. Words you added yourself are listed first; the rest were learned when you " +
         "undid a correction.",
     });
@@ -53,20 +53,20 @@ export class DictionaryModal extends Modal {
       const w = raw.trim();
       if (!w) return;
       if (/\d/.test(w)) {
-        new Notice(`“${w}” isn't a dictionary word`);
+        new Notice(t("ui.msg.IsnTDictionaryWord", { v1: w }));
         return;
       }
       // Reject a word that is already pinned, case-INSENSITIVELY: "iPhone" and "iphone"
       // are the same entry as far as "already there" goes, so don't stack a second row.
       if (this.settings.userDictionary.some((x) => x.toLowerCase() === w.toLowerCase())) {
-        new Notice(`“${w}” is already in your personal dictionary`);
+        new Notice(t("ui.msg.AlreadyPersonalDictionary", { v1: w }));
         return;
       }
       // Reject a word the engine already recognises: adding it is redundant (it is never
       // autocorrected in the first place), so it would just be tidied away again.
       try {
         if (this.isKnown && (await this.isKnown(w))) {
-          new Notice(`“${w}” is already recognised — no need to add it`);
+          new Notice(t("ui.msg.AlreadyRecognisedNeedAdd", { v1: w }));
           return;
         }
       } catch {
@@ -85,13 +85,13 @@ export class DictionaryModal extends Modal {
       for (const w of words) {
         const row = list.createDiv({ cls: "smart-autocorrect-dict-row" });
         row.createSpan({ text: w, cls: "smart-autocorrect-dict-word" });
-        row.createEl("button", { text: "Remove", cls: "smart-autocorrect-dict-remove-btn" }).onclick = () => remove(w);
+        row.createEl("button", { text: t("ui.msg.Remove"), cls: "smart-autocorrect-dict-remove-btn" }).onclick = () => remove(w);
       }
     };
     section("Added by you", added);
     section("Learned automatically", learned);
     if (added.length === 0 && learned.length === 0)
-      el.createEl("p", { cls: "setting-item-description", text: "No words yet — add one below, or right-click a word in a note." });
+      el.createEl("p", { cls: "setting-item-description", text: t("ui.msg.WordsYetAddOneBelow") });
 
     let pending = "";
     new Setting(el)

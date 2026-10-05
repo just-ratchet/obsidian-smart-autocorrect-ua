@@ -12,6 +12,7 @@
  * need in the capture phase and let everything else through.
  */
 import { renderLinkCard } from "./linkCard";
+import { t } from "./i18n";
 import { SectionPreview } from "./SectionPreview";
 import { placeList } from "./linkDock";
 import type { RelatedCandidate } from "./RelatedIndex";
@@ -24,7 +25,7 @@ export interface ChooserOptions {
   title: string;
   hint: string;
   onChoose: (c: RelatedCandidate) => void;
-  /** Optional "Dismiss" button; omitted when there is nothing to dismiss (the selection flow). */
+  /** Optional t("ui.msg.Dismiss") button; omitted when there is nothing to dismiss (the selection flow). */
   onDismiss?: () => void;
 }
 
@@ -110,7 +111,7 @@ export class LinkChooser {
     const head = panel.createDiv({ cls: "sa-rel-head" });
     head.createSpan({ cls: "sa-rel-title", text: opts.title });
     if (opts.onDismiss) {
-      const dismiss = head.createEl("button", { cls: "sa-rel-dismiss", text: "Dismiss" });
+      const dismiss = head.createEl("button", { cls: "sa-rel-dismiss", text: t("ui.msg.Dismiss") });
       dismiss.onclick = () => {
         const cb = opts.onDismiss!;
         this.close();

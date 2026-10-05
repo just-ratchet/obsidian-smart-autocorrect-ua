@@ -6,6 +6,7 @@
  * frontmatter.
  */
 import { EditorSuggest } from "obsidian";
+import { t } from "./i18n";
 import type {
   App,
   Editor,
@@ -468,9 +469,9 @@ export class PredictiveSuggest extends EditorSuggest<SuggestItem> {
     left.createSpan({ cls: "predictive-mark", text: "✦" });
     left.createSpan({ text: value.display });
     if (value.kind === "phrase") {
-      el.createSpan({ text: "⏎ phrase", cls: "predictive-kind" });
+      el.createSpan({ text: t("ui.msg.Phrase"), cls: "predictive-kind" });
     } else if (value.kind === "dictionary") {
-      el.createSpan({ text: "📖 yours", cls: "predictive-kind" });
+      el.createSpan({ text: t("ui.msg.Yours"), cls: "predictive-kind" });
     } else if (value.kind === "currency") {
       el.createSpan({ text: value.badge ?? "", cls: "predictive-kind" });
     }

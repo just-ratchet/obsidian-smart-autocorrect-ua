@@ -86,7 +86,7 @@ export function linkSuggestExtension(
       const menu = new Menu();
       menu.addItem((i) =>
         i
-          .setTitle(`Link to [[${info.hit.display}]]`)
+          .setTitle(t("ui.msg.Link", { v1: info.hit.display }))
           .setIcon("link")
           .onClick(() => {
             const insert =

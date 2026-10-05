@@ -1,14 +1,13 @@
 /**
- * "Your writing stats" dashboard: a proper window onto the gamification numbers that
+ * t("ui.msg.WritingStats") dashboard: a proper window onto the gamification numbers that
  * otherwise only show as a small status-bar tally. Opened by clicking the status bar
  * or via the "Show writing stats" command. Read-only; all values come from a snapshot
  * so the modal has no dependency on the engine internals.
  */
 import { Modal } from "obsidian";
+import { t } from "./i18n";
 import type { App } from "obsidian";
-import { BMC_QR_DATA_URI } from "./bmcQr";
 
-const BMC_URL = "https://buymeacoffee.com/zangeti";
 
 export interface StatsSnapshot {
   keystrokesSaved: number;
@@ -59,7 +58,7 @@ export class StatsModal extends Modal {
     const root = this.contentEl;
     root.empty();
     root.addClass("smart-autocorrect-stats");
-    root.createEl("h2", { text: "Your writing stats" });
+    root.createEl("h2", { text: t("ui.msg.WritingStats") });
 
     // Headline cards: the three numbers people care about.
     const cards = root.createDiv({ cls: "sa-stat-cards" });
@@ -98,37 +97,26 @@ export class StatsModal extends Modal {
     } else {
       root.createEl("p", {
         cls: "sa-stat-sub",
-        text: "🏆 You've hit every milestone. Typing legend.",
+        text: t("ui.msg.HitEveryMilestoneTypingLegend"),
       });
     }
 
     // Key stats.
-    root.createEl("h3", { text: "Key stats" });
+    root.createEl("h3", { text: t("ui.msg.KeyStats") });
     const rows = root.createDiv({ cls: "sa-stat-rows" });
     const row = (label: string, value: number) => {
       const r = rows.createDiv({ cls: "sa-stat-row" });
       r.createSpan({ cls: "sa-stat-row-label", text: label });
       r.createSpan({ cls: "sa-stat-row-value", text: value.toLocaleString() });
     };
-    row("Suggestions accepted", s.accepts);
-    row("Typos fixed", s.corrections);
-    row("Corrections you undid", s.reverts);
-    row("Word alternatives used", s.alternativesAccepted);
-    row("Words in your personal dictionary", s.learnedWords);
+    row(t("ui.msg.SuggestionsAccepted"), s.accepts);
+    row(t("ui.msg.TyposFixed"), s.corrections);
+    row(t("ui.msg.CorrectionsUndid"), s.reverts);
+    row(t("ui.msg.WordAlternativesUsed"), s.alternativesAccepted);
+    row(t("ui.msg.WordsPersonalDictionary"), s.learnedWords);
 
-    // Support / Buy me a coffee.
-    const support = root.createDiv({ cls: "smart-autocorrect-support sa-stat-support" });
-    const p = support.createEl("p", { cls: "setting-item-description" });
-    p.appendText("Enjoying the plugin? You can ");
-    const link = p.createEl("a", { text: "buy me a coffee ☕", href: BMC_URL });
-    link.setAttribute("target", "_blank");
-    link.setAttribute("rel", "noopener");
-    p.appendText(".");
-    const qr = support.createEl("img", { cls: "smart-autocorrect-qr" });
-    qr.src = BMC_QR_DATA_URI;
-    qr.alt = "Buy Me a Coffee QR code";
-    qr.width = 110;
-    qr.height = 110;
+    // No donation ask - see the note in PredictiveSettings.ts.
+
   }
 
   onClose(): void {

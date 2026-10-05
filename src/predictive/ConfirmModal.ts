@@ -1,5 +1,6 @@
 /** A blunt, red confirmation dialog for destructive actions (e.g. resetting statistics). */
 import { Modal } from "obsidian";
+import { t } from "./i18n";
 import type { App } from "obsidian";
 
 interface ConfirmOptions {
@@ -29,7 +30,7 @@ export class ConfirmModal extends Modal {
     contentEl.createEl("h2", { cls: "sa-confirm-title", text: this.opts.title });
     contentEl.createEl("p", { cls: "sa-confirm-body", text: this.opts.body });
     const row = contentEl.createDiv({ cls: "sa-confirm-actions" });
-    const cancel = row.createEl("button", { text: "Cancel" });
+    const cancel = row.createEl("button", { text: t("ui.msg.Cancel") });
     cancel.onclick = () => this.close();
     const confirm = row.createEl("button", {
       cls: danger ? "mod-warning sa-confirm-danger" : "mod-cta",

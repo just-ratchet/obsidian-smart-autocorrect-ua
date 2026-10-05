@@ -9,6 +9,7 @@
  * write a plain JSON file at any vault-relative path the user picks.
  */
 import type { Plugin } from "obsidian";
+import { t } from "./i18n";
 import { debounce, normalizePath, Notice } from "obsidian";
 import {
   Personalization,
@@ -80,7 +81,7 @@ export class PersonalizationStore {
   async reset(): Promise<void> {
     this.personalization.reset();
     await this.save();
-    new Notice("Personalization reset");
+    new Notice(t("ui.msg.PersonalizationReset"));
   }
 
   /** Zero the tallied statistics only (keeps learned adaptation). */
@@ -95,7 +96,7 @@ export class PersonalizationStore {
       p,
       this.personalization.toJSONString(true),
     );
-    new Notice(`Exported personalization → ${p}`);
+    new Notice(t("ui.msg.ExportedPersonalization", { v1: p }));
   }
 
   async importFrom(vaultRelativePath: string, merge: boolean): Promise<void> {
@@ -109,7 +110,7 @@ export class PersonalizationStore {
     if (merge) this.personalization.mergeFrom(raw);
     else this.personalization.loadFrom(raw);
     await this.save();
-    new Notice(`Imported personalization ${merge ? "(merged)" : ""} from ${p}`);
+    new Notice(t("ui.msg.ImportedPersonalizationFrom", { v1: merge ? "(merged)" : "", v2: p }));
   }
 
   updateBeta(beta: number): void {

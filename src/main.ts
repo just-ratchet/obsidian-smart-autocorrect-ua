@@ -8,6 +8,7 @@
  * (unit-tested core). Fully offline - nothing leaves the vault.
  */
 import { App, Notice, Plugin, PluginSettingTab, type SettingDefinitionItem } from "obsidian";
+import { t } from "./predictive/i18n";
 import { PredictiveFeature } from "./predictive/PredictiveFeature";
 import type { PredictiveSettings } from "./predictive/PredictiveSettings";
 import type { EngagementState } from "./predictive/EngagementStore";
@@ -33,7 +34,7 @@ export default class SmartAutocorrectPlugin extends Plugin {
       await this.predictive.enable();
     } catch (e) {
       console.error("[smart-autocorrect] failed to enable; loading in a reduced state", e);
-      new Notice("Smart Autocorrect started with limited functionality — see the developer console for details.");
+      new Notice(t("ui.msg.SmartAutocorrectStartedWithLimited"));
     }
     this.addSettingTab(new SmartSettingTab(this.app, this));
   }

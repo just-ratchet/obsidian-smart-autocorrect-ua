@@ -165,7 +165,7 @@ export class PredictiveFeature {
     const parts: string[] = [];
     if (added.length) parts.push(`added ${added.map((t) => `#${t}`).join(", ")}`);
     if (removed.length) parts.push(`removed ${removed.map((t) => `#${t}`).join(", ")}`);
-    if (parts.length) new Notice(`Frontmatter tags: ${parts.join("; ")}`);
+    if (parts.length) new Notice(t("ui.msg.FrontmatterTags", { v1: parts.join("; ") }));
   }
 
   /**
@@ -204,7 +204,7 @@ export class PredictiveFeature {
   private onAccepted(word: string, saved: number): void {
     this.engine.recordAccept(word, saved);
     for (const m of this.engagement.record(saved))
-      new Notice(`🎉 ${m.toLocaleString()} keystrokes saved with Smart Autocorrect!`, 6000);
+      new Notice(t("ui.msg.KeystrokesSavedWithSmartAutocorrect", { v1: m.toLocaleString() }), 6000);
     this.renderStatus();
     this.saveEngagement();
   }
@@ -262,7 +262,7 @@ export class PredictiveFeature {
     await this.store.resetStats();
     this.renderStatus();
     this.onPersistSettings?.();
-    new Notice("Statistics reset");
+    new Notice(t("ui.msg.StatisticsReset"));
   }
 
   /** Confirm (loudly) then wipe everything the plugin has learned about your writing:
@@ -300,7 +300,7 @@ export class PredictiveFeature {
     await save();
     this.onPersistSettings?.();
     redraw();
-    new Notice("Settings reset to defaults");
+    new Notice(t("ui.msg.SettingsResetDefaults"));
   }
 
   /** Factory reset: settings, personalization, statistics AND the personal dictionary - the lot. */
@@ -322,7 +322,7 @@ export class PredictiveFeature {
     await save();
     this.onPersistSettings?.();
     redraw();
-    new Notice("Factory reset complete");
+    new Notice(t("ui.msg.FactoryResetComplete"));
   }
 
   /** Undo of a correction adds the word to the personal dictionary (the don't-touch list),
@@ -351,7 +351,7 @@ export class PredictiveFeature {
     this.settings.userDictionary = [...this.settings.userDictionary, w];
     this.onSettingsChanged();
     this.onPersistSettings?.();
-    new Notice(`Added “${w}” to your personal dictionary`);
+    new Notice(t("ui.msg.AddedPersonalDictionary", { v1: w }));
   }
 
   /** Explicit add (right-click / #13): unlike the undo path this is NOT gated on the undo
@@ -361,12 +361,12 @@ export class PredictiveFeature {
     const w = word.trim();
     if (!w || /\d/.test(w)) return; // a token with a digit isn't a dictionary word
     if (this.settings.userDictionary.includes(w)) {
-      new Notice(`“${w}” is already in your personal dictionary`);
+      new Notice(t("ui.msg.AlreadyPersonalDictionary", { v1: w }));
       return;
     }
     try {
       if (await this.engine.isKnownWord(w)) {
-        new Notice(`“${w}” is already recognised – no need to add it`);
+        new Notice(t("ui.msg.AlreadyRecognisedNeedAdd2", { v1: w }));
         return;
       }
     } catch {
@@ -377,7 +377,7 @@ export class PredictiveFeature {
     this.settings.userDictionaryUserAdded = [...(this.settings.userDictionaryUserAdded ?? []), w];
     this.onSettingsChanged();
     this.onPersistSettings?.();
-    new Notice(`Added “${w}” to your personal dictionary`);
+    new Notice(t("ui.msg.AddedPersonalDictionary", { v1: w }));
   }
 
   /** The range a "suggest alternatives" rewrite should replace: the current selection if there
@@ -424,7 +424,7 @@ export class PredictiveFeature {
     this.settings.extraAbbreviations = [...this.settings.extraAbbreviations, a];
     this.onSettingsChanged();
     this.onPersistSettings?.();
-    new Notice(`Won't capitalise after “${a}.” anymore`);
+    new Notice(t("ui.msg.WonTCapitaliseAfterAnymore", { v1: a }));
   }
 
   /** Undo of the above: treat the full stop as a sentence end again. */
@@ -437,7 +437,7 @@ export class PredictiveFeature {
     this.settings.extraAbbreviations = next;
     this.onSettingsChanged();
     this.onPersistSettings?.();
-    new Notice(`Will capitalise after “${a}.” again`);
+    new Notice(t("ui.msg.WillCapitaliseAfterAgain", { v1: a }));
   }
 
   /**
@@ -498,7 +498,7 @@ export class PredictiveFeature {
       parts.push(`${removedKnown.map((w) => `“${w}”`).join(", ")} (already recognised)`);
     if (removedVault.length)
       parts.push(`${removedVault.map((w) => `“${w}”`).join(", ")} (no longer in the vault)`);
-    new Notice(`Tidied your personal dictionary: removed ${parts.join("; ")}`);
+    new Notice(t("ui.msg.TidiedPersonalDictionaryRemoved", { v1: parts.join("; ") }));
   }
 
   /** Remove a word from the personal dictionary, with a confirming notice (#13). */
@@ -509,7 +509,7 @@ export class PredictiveFeature {
     this.settings.userDictionaryUserAdded = (this.settings.userDictionaryUserAdded ?? []).filter((x) => x !== w);
     this.onSettingsChanged();
     this.onPersistSettings?.();
-    new Notice(`Removed “${w}” from your personal dictionary`);
+    new Notice(t("ui.msg.RemovedFromPersonalDictionary", { v1: w }));
   }
 
   /** Add `tag` to the note's YAML frontmatter `tags:` list, the canonical place to
@@ -529,7 +529,7 @@ export class PredictiveFeature {
       if (!norm.some((t) => t.toLowerCase() === clean.toLowerCase())) norm.push(clean);
       fm.tags = norm;
     });
-    new Notice(`Added #${clean} to this note's tags`);
+    new Notice(t("ui.msg.AddedNoteSTags", { v1: clean }));
   }
 
   private async processDirty(): Promise<void> {
@@ -703,7 +703,7 @@ export class PredictiveFeature {
               selection: linkSel,
               preferredTop: caretTop(editor),
             }).then((n) => {
-              if (n === 0) new Notice("No related notes found for that selection");
+              if (n === 0) new Notice(t("ui.msg.RelatedNotesFoundSelection"));
             });
           };
           // TAKE OVER the built-in item rather than adding a second one: two near-identical
@@ -739,14 +739,14 @@ export class PredictiveFeature {
         if (this.settings.userDictionary.includes(word)) {
           menu.addItem((item) =>
             item
-              .setTitle(`Remove “${word}” from personal dictionary`)
+              .setTitle(t("ui.msg.RemoveFromPersonalDictionary", { v1: word }))
               .setIcon("book-minus")
               .onClick(() => this.removeFromDictionary(word)),
           );
         } else {
           menu.addItem((item) =>
             item
-              .setTitle(`Add “${word}” to personal dictionary`)
+              .setTitle(t("ui.msg.AddPersonalDictionary", { v1: word }))
               .setIcon("book-plus")
               .onClick(() => void this.addWordExplicit(word)),
           );
@@ -771,7 +771,7 @@ export class PredictiveFeature {
                   alts = [];
                 }
                 if (alts.length === 0) {
-                  new Notice(`No alternatives found for “${word}”`);
+                  new Notice(t("ui.msg.AlternativesFound", { v1: word }));
                   return;
                 }
                 // Show the alternatives AT the word, in the same style as the completion popup and
@@ -887,7 +887,7 @@ export class PredictiveFeature {
           selection,
           preferredTop: caretTop(editor),
         }).then((n) => {
-          if (n === 0) new Notice("No related notes found for that selection");
+          if (n === 0) new Notice(t("ui.msg.RelatedNotesFoundSelection"));
         });
       },
     });
@@ -899,7 +899,7 @@ export class PredictiveFeature {
         this.dismissedRelated.clear();
         const cm = (editor as unknown as { cm?: EditorView }).cm;
         cm?.dispatch({ effects: forceRescan.of(null) });
-        new Notice("Link suggestions refreshed");
+        new Notice(t("ui.msg.LinkSuggestionsRefreshed"));
       },
     });
 
@@ -915,14 +915,14 @@ export class PredictiveFeature {
         const th = [0.5, 0.42, 0.34, 0.27, 0.2][Math.min(4, Math.max(0, this.settings.relatedSensitivity - 1))];
         const cands = await this.relatedIndex.candidatesFor(text, file?.path, exclude, 12, th);
         if (cands.length === 0) {
-          new Notice("No related notes found for this note yet. Keep writing, or raise the sensitivity in settings.");
+          new Notice(t("ui.msg.RelatedNotesFoundNoteYet"));
           return;
         }
         const menu = new Menu();
         for (const c of cands)
           menu.addItem((i) =>
             i
-              .setTitle(`[[${c.display}]]  ·  ${Math.round(c.score * 100)}% related`)
+              .setTitle(t("ui.msg.Related", { v1: c.display, v2: Math.round(c.score * 100) }))
               .setIcon("link")
               .onClick(() => editor.replaceSelection(`[[${c.display}]]`)),
           );
@@ -954,7 +954,7 @@ export class PredictiveFeature {
           .map(([w]) => w);
 
         if (existing.length === 0 && fresh.length === 0) {
-          new Notice("No tag suggestions yet - write a little more, or add some tags elsewhere in the vault.");
+          new Notice(t("ui.msg.TagSuggestionsYetWriteLittle"));
           return;
         }
         const menu = new Menu();
@@ -981,7 +981,7 @@ export class PredictiveFeature {
       name: "Predictive: rebuild personal (vault) model",
       callback: async () => {
         await this.engine.rebuildPersonal();
-        new Notice("Rebuilt personal prediction model");
+        new Notice(t("ui.msg.RebuiltPersonalPredictionModel"));
       },
     });
     this.plugin.addCommand({
@@ -990,12 +990,12 @@ export class PredictiveFeature {
       callback: async () => {
         const buf = await this.engine.packGlobal();
         if (!buf) {
-          new Notice("No text-built global model to pack");
+          new Notice(t("ui.msg.TextBuiltGlobalModelPack"));
           return;
         }
         const dir = this.plugin.manifest.dir ?? ".";
         await this.plugin.app.vault.adapter.writeBinary(`${dir}/${PACKED_GLOBAL_FILE}`, buf);
-        new Notice(`Packed global model → ${PACKED_GLOBAL_FILE} (${(buf.byteLength / 1024) | 0} KB)`);
+        new Notice(t("ui.msg.PackedGlobalModelKb", { v1: PACKED_GLOBAL_FILE, v2: (buf.byteLength / 1024) | 0 }));
       },
     });
     this.plugin.addCommand({
@@ -1006,7 +1006,7 @@ export class PredictiveFeature {
         const text = view?.editor.getValue() ?? "";
         const res = await this.engine.runEvaluation(text);
         if (!res) {
-          new Notice("Model not ready");
+          new Notice(t("ui.msg.ModelNotReady"));
           return;
         }
         new Notice(
