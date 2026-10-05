@@ -100,12 +100,12 @@ node --experimental-strip-types build_model/check_lstm.mjs word_lstm.bin
 
 ## Подяки
 
-- [Zangeti](https://github.com/Zangeti) — оригінальний плагін [Smart Autocorrect](https://github.com/Zangeti/obsidian-smart-autocorrect) і вся його архітектура (LSTM-рантайм, n-gram рушій, автокорекція)
+- [Zangeti](https://github.com/Zangeti) — [Smart Autocorrect](https://github.com/Zangeti/obsidian-smart-autocorrect) і вся його архітектура (LSTM-рантайм, n-gram рушій, автокорекція), який починався як форк плагіну [Various Complements](https://github.com/tadashi-aikawa/obsidian-various-complements-plugin) від Tadashi Aikawa
 - [Дмитро Чаплинський](https://github.com/dchaplinsky) та [lang-uk](https://lang.org.ua) — корпус UberText 2.0
 
 ## Ліцензія
 
 [MIT](LICENSE) — як і в оригіналі.
-
-Copyright (c) 2026 Zangeti (оригінальний плагін)
+Copyright (c) 2026 Tadashi Aikawa (оригінальний плагін)
+Copyright (c) 2026 Zangeti (форк оригінального плагіну)
 Copyright (c) 2026 автори української версії (адаптація під кирилицю, моделі, переклад)
