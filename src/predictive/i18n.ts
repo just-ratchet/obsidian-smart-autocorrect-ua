@@ -1,20 +1,18 @@
 /**
  * Minimal i18n for the plugin UI.
  *
- * Obsidian has no plugin translation API: the app's own language lives in
- * localStorage under "language" (the same key the Obsidian UI reads), so that is what
- * we follow. A user running Obsidian in Ukrainian gets Ukrainian strings; everyone
- * else keeps the original English, which is also the fallback for any key a locale
- * has not translated yet.
+ * This is the Ukrainian edition: the plugin always speaks Ukrainian, whatever language Obsidian
+ * itself runs in. `en` is only the source of truth for which keys exist (and what each string
+ * means); `uk` is what the user sees. The test suite requires every key in `en` to have a `uk`
+ * translation, so the English text is never shown. If a key were somehow missing, `t()` falls
+ * back to the English text rather than throwing, so a gap degrades the UI instead of breaking it.
  *
  * USAGE
  *   import { t } from "./i18n";
  *   new Setting(el).setName(t("settings.predictions.name"))
  *
- * Keys are dotted and grouped by where they appear. Adding a string means adding it
- * to `en` (the source of truth for what exists) and then to each locale; a missing
- * translation falls back rather than throwing, so a half-translated locale still
- * ships a working UI.
+ * Keys are dotted and grouped by where they appear. Adding a string means adding it to `en`
+ * and then to `uk`.
  */
 
 const en = {
@@ -699,42 +697,12 @@ const uk: Partial<Record<MessageKey, string>> = {
   "key.space": "Пробіл",
 };
 
-const LOCALES: Record<string, Partial<Record<MessageKey, string>>> = { uk };
-
-/** The language code Obsidian is running in ("uk", "en", ...), or null if it can't be read.
- *  Obsidian keeps it in localStorage["language"]; moment (which Obsidian bundles and sets to the
- *  app language) is the fallback for platforms where that key is absent. */
-function obsidianLanguage(): string | null {
-  let lang: string | null = null;
-  try {
-    lang = window.localStorage.getItem("language");
-  } catch {
-    // localStorage can be unavailable; fall through to moment
-  }
-  if (!lang) {
-    try {
-      lang = (window as unknown as { moment?: { locale?: () => string } }).moment?.locale?.() ?? null;
-    } catch {
-      lang = null;
-    }
-  }
-  // "uk-UA" / "uk_UA" -> "uk"
-  return lang ? lang.toLowerCase().split(/[-_]/)[0] : null;
-}
-
-/** Read lazily so a language change is picked up on reload. */
-function currentLocale(): Partial<Record<MessageKey, string>> | null {
-  const lang = obsidianLanguage();
-  return lang ? LOCALES[lang] ?? null : null;
-}
-
 /**
- * Translate `key`, falling back to English. `vars` fills `{placeholders}` - done here
- * rather than by the caller so a locale may reorder them to suit its grammar.
+ * Translate `key` into Ukrainian. `vars` fills `{placeholders}` - done here rather than by the
+ * caller so the translation may reorder them to suit Ukrainian grammar.
  */
 export function t(key: MessageKey, vars?: Record<string, string | number>): string {
-  const loc = currentLocale();
-  let s: string = loc?.[key] ?? en[key] ?? key;
+  let s: string = uk[key] ?? en[key] ?? key;
   if (vars) {
     for (const [k, v] of Object.entries(vars)) s = s.split(`{${k}}`).join(String(v));
   }

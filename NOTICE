@@ -4,3 +4,8 @@ Copyright (c) 2026 Zangeti
 Portions of the build configuration and project scaffolding are derived from
 Various Complements (https://github.com/tadashi-aikawa/obsidian-various-complements-plugin),
 Copyright (c) 2023 Tadashi Aikawa, also released under the MIT License.
+
+Smart Autocorrect UA
+Ukrainian adaptation of Smart Autocorrect (Cyrillic word handling, Ukrainian
+language models, translation), also released under the MIT License.
+Language models are trained on UberText 2.0 (https://lang.org.ua/en/ubertext/).

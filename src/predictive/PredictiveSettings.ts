@@ -307,6 +307,15 @@ export const DEFAULT_PREDICTIVE_SETTINGS: PredictiveSettings = {
 };
 
 /**
+ * Settings as saved by an earlier version, completed with today's defaults. Values the user set
+ * are kept; keys this version has never heard of (from a removed or renamed option) are ignored
+ * rather than failing, and new keys take their default.
+ */
+export function mergeSettings(saved: Partial<PredictiveSettings> | undefined): PredictiveSettings {
+  return { ...DEFAULT_PREDICTIVE_SETTINGS, ...(saved ?? {}) };
+}
+
+/**
  * Answers the settings pane needs but can only get asynchronously (is the model installed, is
  * SIMD actually running). The pane is described synchronously and re-described on every render,
  * so the answers are cached HERE, outside any one render, and fetched only when missing. A

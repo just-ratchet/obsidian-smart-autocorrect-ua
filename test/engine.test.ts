@@ -41,10 +41,10 @@ test("tokenizeWords normalises and splits", () => {
 
 test("sentence splitting respects abbreviations", () => {
   const ab = buildAbbreviationSet();
-  const sents = splitSentences("We met in the U.S. yesterday. It rained.", { abbreviations: ab });
-  // "U.S." must NOT end a sentence; "yesterday." does.
+  const sents = splitSentences("Ми зустрілися у XIX ст. вчора. Йшов дощ.", { abbreviations: ab });
+  // "ст." must NOT end a sentence; "вчора." does.
   assert.equal(sents.length, 2);
-  assert.ok(sents[0].includes("yesterday"));
+  assert.ok(sents[0].includes("вчора"));
 });
 
 test("isSentenceTerminator: e.g. and decimals are not boundaries", () => {
@@ -294,7 +294,7 @@ test("auto-capitalisation: real starts vs abbreviations", () => {
   const cfg = defaultSentenceCaseConfig();
   assert.equal(shouldCapitalizeNext("", cfg), true); // doc start
   assert.equal(shouldCapitalizeNext("It rained today. ", cfg), true);
-  assert.equal(shouldCapitalizeNext("We met in the U.S. ", cfg), false);
+  assert.equal(shouldCapitalizeNext("Ми зустрілися у XIX ст. ", cfg), false);
   assert.equal(shouldCapitalizeNext("for example, e.g. ", cfg), false);
   assert.equal(shouldCapitalizeNext("The price was 3.14 ", cfg), false);
   assert.equal(applyAutoCapitalization("dog", "It rained. ", cfg), "Dog");
@@ -303,8 +303,8 @@ test("auto-capitalisation: real starts vs abbreviations", () => {
   assert.equal(applyAutoCapitalization("i", "and then ", cfg), "i");
   assert.equal(applyAutoCapitalization("i", "and then ", { ...cfg, fixI: true }), "I");
   // #17: a bare leading-capital canonical ("the"→"The") applies only at a real sentence start,
-  // NOT after an abbreviation like "incl." (that spurious capital was the reported bug).
-  assert.equal(applyAutoCapitalization("the", "items incl. ", { ...cfg, canonical: "The" }), "the");
+  // NOT after an abbreviation like "напр." (that spurious capital was the reported bug).
+  assert.equal(applyAutoCapitalization("the", "речі, напр. ", { ...cfg, canonical: "The" }), "the");
   assert.equal(applyAutoCapitalization("the", "It rained. ", { ...cfg, canonical: "The" }), "The");
   // A genuine proper noun (differs by more than the first letter) still applies mid-sentence.
   assert.equal(applyAutoCapitalization("nasa", "works at ", { ...cfg, canonical: "NASA" }), "NASA");

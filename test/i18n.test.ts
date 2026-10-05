@@ -138,3 +138,19 @@ test("no user-visible string in the UI code bypasses the translation catalogue",
   }
   assert.deepEqual(offenders, [], "user-visible strings that do not go through t():\n" + offenders.join("\n"));
 });
+
+// ---- the UI is Ukrainian whatever language Obsidian runs in -----------------------------------
+
+test("t() answers in Ukrainian even when Obsidian is set to English", async () => {
+  const g = globalThis as unknown as { window?: unknown };
+  const before = g.window;
+  g.window = { localStorage: { getItem: (k: string) => (k === "language" ? "en" : null) } };
+  try {
+    const { t } = await import("../src/predictive/i18n.ts");
+    assert.equal(t("cmd.revert"), "Скасувати виправлення");
+    assert.ok(CYRILLIC.test(t("assets.title")), "assets.title should be Ukrainian");
+    assert.equal(t("dict.heading", { title: "Слова", count: 3 }), "Слова (3)");
+  } finally {
+    g.window = before;
+  }
+});
