@@ -1,6 +1,6 @@
 {
   "name": "smart-autocorrect-ua",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Українські підказки наступного слова, виправлення одруківок і підказки посилань для Obsidian на локальній мовній моделі.",
   "main": "main.js",
   "scripts": {
