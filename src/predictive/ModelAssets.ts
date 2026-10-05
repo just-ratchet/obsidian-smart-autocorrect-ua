@@ -15,14 +15,17 @@
  *   - It never blocks startup: the plugin runs (degraded) with any subset present.
  */
 import { App, Modal, Notice, Plugin, requestUrl, Setting } from "obsidian";
+import { t } from "./i18n";
 
 /** One downloadable asset, pinned by size and digest. */
 export interface AssetSpec {
   file: string;
   bytes: number;
   sha256: string;
-  /** What the user loses if this one is missing - shown in the consent dialog. */
-  purpose: string;
+  /** What the user loses if this one is missing - shown in the consent dialog.
+   *  A key, not a string: MODEL_ASSETS is a module-level constant, so resolving it
+   *  eagerly would freeze the language at import time, before the UI locale is read. */
+  purposeKey: "assets.purpose.lstm" | "assets.purpose.ngram" | "assets.purpose.wordlist";
 }
 
 /**
@@ -43,19 +46,19 @@ export const MODEL_ASSETS: AssetSpec[] = [
     file: "word_lstm.bin",
     bytes: 57665197,
     sha256: "be91e9d4f59786e5623bea9dbf908b1d7508b3445225d6ad03a922b01a8ae468",
-    purpose: "next-word prediction, phrase completion and capitalisation",
+    purposeKey: "assets.purpose.lstm",
   },
   {
     file: "predictive-global.bin",
     bytes: 26274133,
     sha256: "803270d341771ab87eac3d382b3540b1f027a309b036b937cd6226e5c9697c69",
-    purpose: "word-frequency model used for autocorrect scoring",
+    purposeKey: "assets.purpose.ngram",
   },
   {
     file: "wordlist.bin",
     bytes: 2804013,
     sha256: "598418c15388fb3f67acbb59161a409b42bb4af72ef40f5c8c42440451ab1c6e",
-    purpose: "known-word list that stops real words being 'corrected'",
+    purposeKey: "assets.purpose.wordlist",
   },
 ];
 
@@ -98,7 +101,7 @@ export async function downloadAssets(
   for (let i = 0; i < assets.length; i++) {
     const a = assets[i];
     const label = `${a.file} (${Math.round(a.bytes / MB)} MB, ${i + 1}/${assets.length})`;
-    onProgress?.(`Downloading ${label}…`);
+    onProgress?.(t("assets.downloading", { label }));
     try {
       const res = await requestUrl({ url: `${ASSET_BASE}/${a.file}`, method: "GET" });
       const buf = res.arrayBuffer;
@@ -114,7 +117,7 @@ export async function downloadAssets(
       done.push(a);
     } catch (e) {
       console.error(`[smart-autocorrect] could not download ${a.file}`, e);
-      onProgress?.(`Could not download ${a.file}: ${(e as Error).message}`);
+      onProgress?.(t("assets.failed", { file: a.file, message: (e as Error).message }));
       return done;
     }
   }
@@ -141,31 +144,24 @@ export class AssetConsentModal extends Modal {
 
   onOpen(): void {
     const { contentEl } = this;
-    contentEl.createEl("h2", { text: "Download the language model" });
+    contentEl.createEl("h2", { text: t("assets.title") });
     contentEl.createEl("p", {
-      text:
-        `To give you the best predictions, Smart Autocorrect uses a language model ` +
-        `(${totalMegabytes(this.assets)} MB). It's too big to ship inside the plugin, so it's ` +
-        `fetched once from GitHub and then runs entirely on your device.`,
+      text: t("assets.body", { size: totalMegabytes(this.assets) }),
     });
     const list = contentEl.createEl("ul");
     for (const a of this.assets) {
-      list.createEl("li", { text: `${a.file} - ${a.purpose}` });
+      list.createEl("li", { text: `${a.file} - ${t(a.purposeKey)}` });
     }
-    contentEl.createEl("p", {
-      text:
-        "You can skip this and start right away - the plugin still works and learns from your " +
-        "own notes, and you can download the model anytime from settings.",
-    });
+    contentEl.createEl("p", { text: t("assets.skip") });
     new Setting(contentEl)
       .addButton((b) =>
         b
-          .setButtonText("Not now")
+          .setButtonText(t("assets.notNow"))
           .onClick(() => this.finish(false)),
       )
       .addButton((b) =>
         b
-          .setButtonText(`Download ${totalMegabytes(this.assets)} MB`)
+          .setButtonText(t("assets.download", { size: totalMegabytes(this.assets) }))
           .setCta()
           .onClick(() => this.finish(true)),
       );
@@ -195,22 +191,18 @@ export function askForAssets(app: App, assets: AssetSpec[]): Promise<boolean> {
 export async function ensureAssets(plugin: Plugin, force = false): Promise<boolean> {
   const missing = await missingAssets(plugin);
   if (missing.length === 0) {
-    if (force) new Notice("Smart Autocorrect: language model is already installed.");
+    if (force) new Notice(t("assets.alreadyInstalled"));
     return false;
   }
   if (!(await askForAssets(plugin.app, missing))) return false;
 
-  const notice = new Notice("Smart Autocorrect: starting download…", 0);
+  const notice = new Notice(t("assets.starting"), 0);
   const got = await downloadAssets(plugin, missing, (m) => notice.setMessage(m));
   notice.hide();
   if (got.length === missing.length) {
-    new Notice("Smart Autocorrect: language model installed.", 6000);
+    new Notice(t("assets.installed"), 6000);
     return true;
   }
-  new Notice(
-    `Smart Autocorrect: downloaded ${got.length} of ${missing.length} files. ` +
-      `Retry from the plugin settings.`,
-    9000,
-  );
+  new Notice(t("assets.partial", { got: got.length, total: missing.length }), 9000);
   return got.length > 0;
 }

@@ -1,11 +1,10 @@
 {
   "id": "smart-autocorrect-ua",
   "name": "Smart Autocorrect UA",
-  "version": "1.0.16-ua.1",
+  "version": "0.1.0",
   "minAppVersion": "1.11.4",
-  "description": "Українська версія: передбачення наступного слова, виправлення одруківок під час набору та підказки посилань на ваші нотатки. Усе на вашому пристрої.",
-  "author": "Zangeti (Ukrainian fork)",
-  "fundingUrl": "https://buymeacoffee.com/zangeti",
+  "description": "Ukrainian next-word prediction, typo correction as you type, and link suggestions for your notes. Runs entirely on your device.",
+  "author": "Ukrainian fork of Smart Autocorrect by Zangeti",
   "isDesktopOnly": false,
-  "authorUrl": "https://github.com/Zangeti"
+  "authorUrl": "https://github.com/Zangeti/obsidian-smart-autocorrect"
 }
