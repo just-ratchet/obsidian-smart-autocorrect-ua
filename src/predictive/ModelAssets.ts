@@ -44,7 +44,7 @@ export interface AssetSpec {
  * the original URL here would hand Ukrainian users an English model that cannot complete a
  * single word they type. Update OWNER below to the account hosting the release.
  */
-export const RELEASE_TAG = "models-uk-1";
+export const RELEASE_TAG = "models-uk-2";
 const OWNER = "just-ratchet";
 const REPO = "obsidian-smart-autocorrect-ua";
 export const ASSET_BASE = `https://github.com/${OWNER}/${REPO}/releases/download/${RELEASE_TAG}`;
@@ -53,7 +53,7 @@ export const MODEL_ASSETS: AssetSpec[] = [
   {
     file: "word_lstm.bin",
     bytes: 36842260,
-    sha256: "1f62249f6518ba21307c1d51a8e98375ef0dc0cd61a789a028dd885b426c06dd",
+    sha256: "72219e83ead418463082fb63efcc637d12a4962d447090c6e04478278657312c",
     purposeKey: "assets.purpose.lstm",
   },
   {

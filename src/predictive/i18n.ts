@@ -236,6 +236,7 @@ const en = {
   "ui.tut.4.title": "See what you've saved",
   "ui.tut.4.body": "The counter in the status bar adds up the keystrokes you've saved. Click it any time for your streak, time saved, and more.",
   "ui.btn.StartWriting": "Start writing",
+  "ui.btn.Next": "Next",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -455,6 +456,7 @@ const uk: Partial<Record<MessageKey, string>> = {
   "ui.tut.4.title": "Дивіться, скільки зекономлено",
   "ui.tut.4.body": "Лічильник у смузі стану додає зекономлені натискання. Клацніть будь-коли, щоб побачити серію, збережений час та інше.",
   "ui.btn.StartWriting": "Почати писати",
+  "ui.btn.Next": "Далі",
 };
 
 const LOCALES: Record<string, Partial<Record<MessageKey, string>>> = { uk };

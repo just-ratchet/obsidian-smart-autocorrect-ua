@@ -86,7 +86,7 @@ export class TutorialModal extends Modal {
     if (src) {
       const img = root.createEl("img", { cls: "sa-tut-img" });
       img.src = src;
-      img.alt = s.title;
+      img.alt = t(s.titleKey);
     }
 
     // Dots first, so "where am I" is answered above the buttons the eye lands on.
@@ -102,7 +102,7 @@ export class TutorialModal extends Modal {
     else nav.addButton((b) => b.setButtonText(t("ui.btn.Skip")).onClick(() => this.close()));
     nav.addButton((b) =>
       b
-        .setButtonText(last ? t("ui.btn.StartWriting") : "Next")
+        .setButtonText(last ? t("ui.btn.StartWriting") : t("ui.btn.Next"))
         .setCta()
         .onClick(() => this.go(1)),
     );
