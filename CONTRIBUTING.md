@@ -28,9 +28,3 @@
 ## Правила автокорекції
 
 Правила лежать у `src/predictive/engine/text/`. Кожна зміна поведінки має супроводжуватися тестом у `test/` із парою «вхід → очікуваний результат»; окремо додавайте випадки «не чіпати» (код, посилання, вікі-посилання, YAML, англійський текст).
-
-## Випуск (для власника)
-
-1. `node version-bump.mjs X.Y.Z`, запис у `CHANGELOG.md`.
-2. Створіть тег `X.Y.Z` (без префікса `v`) і надішліть його: workflow `.github/workflows/release.yml` збере плагін і створить GitHub Release з `main.js`, `manifest.json`, `styles.css`.
-3. Файли мовних моделей (`word_lstm.bin`, `predictive-global.bin`, `wordlist.bin`) лежать в окремому релізі з тегом `RELEASE_TAG` з `src/predictive/ModelAssets.ts`; перед змінами моделей оновіть цей тег і контрольні суми.
