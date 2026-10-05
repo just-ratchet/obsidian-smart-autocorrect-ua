@@ -204,6 +204,27 @@ const en = {
   "ui.msg.LinksGoInlineWhereConcept": "Links go inline where a concept is mentioned; tags are typed with #. For a full list at ",
   "ui.msg.WordsAlwaysCorrectAsWritten2": "Words that are always correct as written, so they're never autocorrected or re-cased ",
   "ui.msg.EvalCorrectionRecallKKeystrokes": "Eval: correction {v1}% · recall@k {v2}% · keystrokes saved {v3}%",
+
+  // --- long setting descriptions ---
+  "ui.help.SurprisingTypedWordMustBe": "How surprising the typed word must be, versus the best alternative, before it's replaced (Shannon information gain, in nats). The single control for how readily it corrects: lower = corrects even mildly-off words; higher = only fixes words that are very unlikely in context.",
+  "ui.help.UndoAutocorrectionCtrlcmdzAddWord": "When you undo an autocorrection (Ctrl/Cmd-Z), add that word to your personal dictionary above so it's never corrected again. Your dictionary is the plugin's don't-touch list.",
+  "ui.help.UndoCapitalLetterWasAdded": "When you undo a capital letter that was added after an abbreviation (e.g. undoing the capital in “etc. Then” back to “then”), remember that word so the plugin stops capitalising after it.",
+  "ui.help.WordPersonalDictionaryNoLonger": "When a word in your personal dictionary no longer appears in any note, drop it automatically. Keeps the dictionary to words you actually write.",
+  "ui.help.NeverSuggestAutocorrectSwearWords": "Never suggest or autocorrect to swear words, slurs, or explicit terms. This only affects what the plugin offers. Anything you type yourself is left exactly as written and never corrected away. To un-block a specific word, add it to your personal dictionary above; dictionary words are never filtered.",
+  "ui.help.ManyLettersWordMustType": "How many letters of a word you must type before completions appear. 1 = as soon as you start a word; higher cuts noise on very short prefixes. Next-word prediction after a space is unaffected.",
+  "ui.help.KeyInsertsHighlightedSuggestionKey": "The key that inserts the highlighted suggestion. Only this key accepts; the others keep their normal behaviour, so if you pick Tab then Enter still starts a new line.",
+  "ui.help.LikeWordTabIndentsList": "Like Word: Tab only indents a list item when the cursor is right after the bullet. Mid-item, Tab does nothing, so a Tab meant to accept a suggestion can't shove the bullet right when the popup has already closed.",
+  "ui.help.CompleteWordHasDoubleSpace": "When you complete a word that has a double space before it, collapse it to one.",
+  "ui.help.ChooseWhichLinkingHelpWant": "Choose which linking help you want. “Automatic tooltips” drops a small link icon beside a block when another note's section is a close topical match – click it to insert a [[link]] to that section. “Enhanced [[ menu” replaces Obsidian's [[ picker with one that ranks notes by how relevant they are to what you're writing (other notes still appear, greyed). Pick either, both, or turn linking off.",
+  "ui.help.EagerLinkIcons1Shows": "How eager the link icons are. 1 shows an icon only for a very close topical match; 5 is looser. Thresholds are calibrated from your vault's own similarity distribution, not fixed guesses. If you see too many icons, lower it.",
+  "ui.help.ParagraphListMustHaveAt": "A paragraph or list must have at least this many words before it can show a link icon. Higher keeps short lines (and whatever you're mid-typing) icon-free.",
+  "ui.help.RunNeuralModelFastInbrowser": "Run the neural model on a fast in-browser SIMD kernel (about 10x quicker than plain JavaScript). Recommended on. It is NOT a silent fallback: if your device can't run it, the line below says so.",
+  "ui.help.CompletionsAppearPopupListLets": "How completions appear. A popup list lets you pick from a few options; inline ghost text shows just the top one as dimmed text ahead of the cursor. Either way, Tab accepts.",
+  "ui.help.AdaptCorrectionsSuggestionsAcceptTurn": "Adapt to your corrections and the suggestions you accept. Turn off to keep suggestions the same for everyone: nothing new is recorded and what's already been learned is set aside (but kept, so you can switch it back on).",
+  "ui.help.UsedByExportimportButtonsBelow": "Only used by the Export/Import buttons below. This is not where personalization lives; the live data is always personalization.json in the plugin folder.",
+  "ui.opt.Comma": "$1,000 (comma)",
+  "ui.opt.Period": "$1.000 (period)",
+  "ui.opt.NoneSep": "$1000 (none)",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -391,6 +412,27 @@ const uk: Partial<Record<MessageKey, string>> = {
   "ui.msg.LinksGoInlineWhereConcept": "Посилання додаються там, де згадано поняття; теґи набираються через #. Повний перелік у ",
   "ui.msg.WordsAlwaysCorrectAsWritten2": "Слова, які завжди правильні в такому написанні, тож ніколи не виправляються й не змінюють регістр ",
   "ui.msg.EvalCorrectionRecallKKeystrokes": "Оцінка: виправлення {v1}% · recall@k {v2}% · зекономлено натискань {v3}%",
+
+  // --- long setting descriptions ---
+  "ui.help.SurprisingTypedWordMustBe": "Наскільки неочікуваним має бути набране слово порівняно з найкращим відповідником, щоб його замінили (приріст інформації за Шенноном, у натах). Єдиний регулятор охоти до виправлень: менше = виправляє навіть трохи неточні слова; більше = виправляє лише дуже малоймовірні в контексті.",
+  "ui.help.UndoAutocorrectionCtrlcmdzAddWord": "Коли ви скасовуєте автовиправлення (Ctrl/Cmd-Z), додавати це слово до особистого словника вище, щоб його більше не виправляли. Ваш словник — це перелік «не торкатися».",
+  "ui.help.UndoCapitalLetterWasAdded": "Коли ви скасовуєте велику літеру, додану після скорочення (наприклад, повертаєте «етс. Тоді» на «тоді»), запам’ятовувати це слово, щоб плагін більше не писав після нього з великої.",
+  "ui.help.WordPersonalDictionaryNoLonger": "Коли слово з особистого словника більше не трапляється ні в одній нотатці, вилучати його автоматично. Так словник містить лише слова, якими ви справді користуєтесь.",
+  "ui.help.NeverSuggestAutocorrectSwearWords": "Ніколи не підказувати й не виправляти на лайку, образливі чи відкрито сексуальні слова. Це впливає лише на те, що пропонує плагін. Усе, що ви набрали самі, лишається точно як написано й ніколи не виправляється. Щоб розблокувати конкретне слово, додайте його до особистого словника вище — словникові слова не фільтруються.",
+  "ui.help.ManyLettersWordMustType": "Скільки літер слова потрібно набрати, перш ніж з’являться завершення. 1 = щойно ви почали слово; більше — менше шуму на дуже коротких префіксах. Підказки наступного слова після пробілу це не змінює.",
+  "ui.help.KeyInsertsHighlightedSuggestionKey": "Клавіша, що вставляє виділену підказку. Приймає лише вона; решта зберігає звичайну поведінку, тож якщо вибрати Tab, Enter і далі переносить рядок.",
+  "ui.help.LikeWordTabIndentsList": "Як у Word: Tab робить відступ елемента списку лише тоді, коли курсор одразу після маркера. Усередині елемента Tab не робить нічого, тож натискання, призначене для прийняття підказки, не зсуне маркер, якщо вікно вже закрилося.",
+  "ui.help.CompleteWordHasDoubleSpace": "Коли ви завершуєте слово, перед яким подвійний пробіл, зводити його до одного.",
+  "ui.help.ChooseWhichLinkingHelpWant": "Виберіть, яка допомога з посиланнями вам потрібна. «Автоматичні підказки» додають невелику піктограму посилання біля блоку, коли розділ іншої нотатки близький за темою — клацніть, щоб вставити [[посилання]] на той розділ. «Покращене меню [[» замінює стандартний вибір Obsidian на такий, що ранжує нотатки за дотичністю до написаного (інші нотатки лишаються, приглушені). Виберіть одне, обидва або вимкніть посилання.",
+  "ui.help.EagerLinkIcons1Shows": "Наскільки охоче з’являються піктограми посилань. 1 — лише за дуже близької тематичної збіжності; 5 — вільніше. Пороги калібруються за розподілом схожості саме вашого сховища, а не за фіксованими припущеннями. Якщо піктограм надто багато — зменште.",
+  "ui.help.ParagraphListMustHaveAt": "Абзац або список має містити щонайменше стільку слів, щоб показати піктограму посилання. Більше значення лишає короткі рядки (і те, що ви саме набираєте) без піктограм.",
+  "ui.help.RunNeuralModelFastInbrowser": "Виконувати нейромодель на швидкому браузерному SIMD-ядрі (приблизно в 10 разів швидше за звичайний JavaScript). Радимо увімкнути. Це НЕ тихий запасний варіант: якщо ваш пристрій не здатен, рядок нижче про це скаже.",
+  "ui.help.CompletionsAppearPopupListLets": "Як з’являються завершення. Список у вікні дає вибрати з кількох варіантів; вбудований текст-привид показує лише найкращий приглушеним текстом перед курсором. В обох випадках Tab приймає.",
+  "ui.help.AdaptCorrectionsSuggestionsAcceptTurn": "Пристосовуватися до ваших виправлень і прийнятих підказок. Вимкніть, щоб підказки були однакові для всіх: нове не записується, а вже вивчене відкладається (але зберігається, тож можна повернути).",
+  "ui.help.UsedByExportimportButtonsBelow": "Використовується лише кнопками експорту/імпорту нижче. Персоналізація зберігається не тут: актуальні дані завжди в personalization.json у теці плагіна.",
+  "ui.opt.Comma": "1 000 (пробіл-кома)",
+  "ui.opt.Period": "1.000 (точка)",
+  "ui.opt.NoneSep": "1000 (без розділювача)",
 };
 
 const LOCALES: Record<string, Partial<Record<MessageKey, string>>> = { uk };

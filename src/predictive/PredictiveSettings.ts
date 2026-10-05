@@ -448,9 +448,7 @@ export function buildPredictiveSettingGroups(
 
   row()
     .setName(t("ui.name.AutocorrectStrengthInformationGain"))
-    .setDesc(
-      "How surprising the typed word must be, versus the best alternative, before it's replaced (Shannon information gain, in nats). The single control for how readily it corrects: lower = corrects even mildly-off words; higher = only fixes words that are very unlikely in context.",
-    )
+    .setDesc(t("ui.help.SurprisingTypedWordMustBe"))
     .addSlider((s) =>
       s
         .setLimits(0.5, 8, 0.5)
@@ -577,10 +575,7 @@ export function buildPredictiveSettingGroups(
 
   row()
     .setName(t("ui.name.UndoAddsWordDictionary"))
-    .setDesc(
-      "When you undo an autocorrection (Ctrl/Cmd-Z), add that word to your personal dictionary " +
-        "above so it's never corrected again. Your dictionary is the plugin's don't-touch list.",
-    )
+    .setDesc(t("ui.help.UndoAutocorrectionCtrlcmdzAddWord"))
     .addToggle((t) =>
       t.setValue(settings.undoAddsToDictionary).onChange((v) => {
         settings.undoAddsToDictionary = v;
@@ -590,11 +585,7 @@ export function buildPredictiveSettingGroups(
 
   row()
     .setName(t("ui.name.LearnAbbreviationsWhenYouUndo"))
-    .setDesc(
-      "When you undo a capital letter that was added after an abbreviation (e.g. undoing the " +
-        "capital in “etc. Then” back to “then”), remember that word so the plugin stops " +
-        "capitalising after it.",
-    )
+    .setDesc(t("ui.help.UndoCapitalLetterWasAdded"))
     .addToggle((t) =>
       t.setValue(settings.learnAbbreviationsOnRevert).onChange((v) => {
         settings.learnAbbreviationsOnRevert = v;
@@ -604,10 +595,7 @@ export function buildPredictiveSettingGroups(
 
   row()
     .setName(t("ui.name.ForgetDictionaryWordsRemovedFrom"))
-    .setDesc(
-      "When a word in your personal dictionary no longer appears in any note, drop it " +
-        "automatically. Keeps the dictionary to words you actually write.",
-    )
+    .setDesc(t("ui.help.WordPersonalDictionaryNoLonger"))
     .addToggle((t) =>
       t.setValue(settings.pruneDictionaryFromVault).onChange((v) => {
         settings.pruneDictionaryFromVault = v;
@@ -617,12 +605,7 @@ export function buildPredictiveSettingGroups(
 
   row()
     .setName(t("ui.name.FilterProfanityNsfwWords"))
-    .setDesc(
-      "Never suggest or autocorrect to swear words, slurs, or explicit terms. " +
-        "This only affects what the plugin offers. Anything you type yourself is left exactly " +
-        "as written and never corrected away. To un-block a specific word, add it to your " +
-        "personal dictionary above; dictionary words are never filtered.",
-    )
+    .setDesc(t("ui.help.NeverSuggestAutocorrectSwearWords"))
     .addToggle((t) =>
       t.setValue(settings.filterProfanity).onChange((v) => {
         settings.filterProfanity = v;
@@ -690,11 +673,7 @@ export function buildPredictiveSettingGroups(
 
   row()
     .setName(t("ui.name.StartSuggestingAfter"))
-    .setDesc(
-      "How many letters of a word you must type before completions appear. 1 = as soon as " +
-        "you start a word; higher cuts noise on very short prefixes. Next-word prediction " +
-        "after a space is unaffected.",
-    )
+    .setDesc(t("ui.help.ManyLettersWordMustType"))
     .addSlider((s) =>
       s
         .setLimits(1, 5, 1)
@@ -707,11 +686,7 @@ export function buildPredictiveSettingGroups(
 
   row()
     .setName(t("ui.name.AcceptSuggestionWith"))
-    .setDesc(
-      "The key that inserts the highlighted suggestion. Only this key accepts; the " +
-        "others keep their normal behaviour, so if you pick Tab then Enter still starts " +
-        "a new line.",
-    )
+    .setDesc(t("ui.help.KeyInsertsHighlightedSuggestionKey"))
     .addDropdown((d) => {
       for (const k of ACCEPT_KEYS) d.addOption(k, k === "ArrowRight" ? "Right arrow" : k);
       d.setValue(settings.acceptKey).onChange((v) => {
@@ -722,11 +697,7 @@ export function buildPredictiveSettingGroups(
 
   row()
     .setName(t("ui.name.TabIndentsBulletsOnlyFrom"))
-    .setDesc(
-      "Like Word: Tab only indents a list item when the cursor is right after the bullet. " +
-        "Mid-item, Tab does nothing, so a Tab meant to accept a suggestion can't shove the " +
-        "bullet right when the popup has already closed.",
-    )
+    .setDesc(t("ui.help.LikeWordTabIndentsList"))
     .addToggle((t) =>
       t.setValue(settings.tabIndentAtBulletStartOnly).onChange((v) => {
         settings.tabIndentAtBulletStartOnly = v;
@@ -736,9 +707,7 @@ export function buildPredictiveSettingGroups(
 
   row()
     .setName(t("ui.name.TidyDoubleSpaces"))
-    .setDesc(
-      "When you complete a word that has a double space before it, collapse it to one.",
-    )
+    .setDesc(t("ui.help.CompleteWordHasDoubleSpace"))
     .addToggle((t) =>
       t.setValue(settings.collapseDoubleSpace).onChange((v) => {
         settings.collapseDoubleSpace = v;
@@ -764,9 +733,9 @@ export function buildPredictiveSettingGroups(
     .setDesc(t("ui.desc.WhichGroupingUseInsideCurrency"))
     .addDropdown((d) =>
       d
-        .addOption("comma", "$1,000 (comma)")
-        .addOption("period", "$1.000 (period)")
-        .addOption("none", "$1000 (none)")
+        .addOption("comma", t("ui.opt.Comma"))
+        .addOption("period", t("ui.opt.Period"))
+        .addOption("none", t("ui.opt.NoneSep"))
         .setValue(settings.currencyThousands)
         .onChange((v) => {
           settings.currencyThousands = v as PredictiveSettings["currencyThousands"];
@@ -812,13 +781,7 @@ export function buildPredictiveSettingGroups(
           : "off";
   row()
     .setName(t("ui.name.LinkingAssistance"))
-    .setDesc(
-      "Choose which linking help you want. “Automatic tooltips” drops a small link icon beside a " +
-        "block when another note's section is a close topical match – click it to insert a " +
-        "[[link]] to that section. “Enhanced [[ menu” replaces Obsidian's [[ picker with one that " +
-        "ranks notes by how relevant they are to what you're writing (other notes still appear, " +
-        "greyed). Pick either, both, or turn linking off.",
-    )
+    .setDesc(t("ui.help.ChooseWhichLinkingHelpWant"))
     .addDropdown((d) =>
       d
         .addOptions({
@@ -843,11 +806,7 @@ export function buildPredictiveSettingGroups(
   if (settings.suggestLinks) {
     row()
       .setName(t("ui.name.RelatedLinkSensitivity"))
-      .setDesc(
-        "How eager the link icons are. 1 shows an icon only for a very close topical match; " +
-          "5 is looser. Thresholds are calibrated from your vault's own similarity distribution, " +
-          "not fixed guesses. If you see too many icons, lower it.",
-      )
+      .setDesc(t("ui.help.EagerLinkIcons1Shows"))
       .addSlider((s) =>
         s
           .setLimits(1, 5, 1)
@@ -859,10 +818,7 @@ export function buildPredictiveSettingGroups(
       );
     row()
       .setName(t("ui.name.MinimumBlockLengthLink"))
-      .setDesc(
-        "A paragraph or list must have at least this many words before it can show a link icon. " +
-          "Higher keeps short lines (and whatever you're mid-typing) icon-free.",
-      )
+      .setDesc(t("ui.help.ParagraphListMustHaveAt"))
       .addSlider((s) =>
         s
           .setLimits(5, 40, 1)
@@ -922,11 +878,7 @@ export function buildPredictiveSettingGroups(
   );
   row()
     .setName(t("ui.name.WasmSimdAcceleration"))
-    .setDesc(
-      "Run the neural model on a fast in-browser SIMD kernel (about 10x quicker than " +
-        "plain JavaScript). Recommended on. It is NOT a silent fallback: if your device " +
-        "can't run it, the line below says so.",
-    )
+    .setDesc(t("ui.help.RunNeuralModelFastInbrowser"))
     .addToggle((t) =>
       t.setValue(settings.wasmSimd).onChange(async (v) => {
         settings.wasmSimd = v;
@@ -990,10 +942,7 @@ export function buildPredictiveSettingGroups(
   }
   row()
     .setName(t("ui.name.SuggestionStyle"))
-    .setDesc(
-      "How completions appear. A popup list lets you pick from a few options; inline ghost text " +
-        "shows just the top one as dimmed text ahead of the cursor. Either way, Tab accepts.",
-    )
+    .setDesc(t("ui.help.CompletionsAppearPopupListLets"))
     .addDropdown((d) =>
       d
         .addOptions({ popup: "Popup list", ghost: "Inline ghost text" })
@@ -1030,11 +979,7 @@ export function buildPredictiveSettingGroups(
 
   row()
     .setName(t("ui.name.AdaptMe"))
-    .setDesc(
-      "Adapt to your corrections and the suggestions you accept. Turn off to keep suggestions " +
-        "the same for everyone: nothing new is recorded and what's already been learned is set " +
-        "aside (but kept, so you can switch it back on).",
-    )
+    .setDesc(t("ui.help.AdaptCorrectionsSuggestionsAcceptTurn"))
     .addToggle((t) =>
       t.setValue(settings.personalizationEnabled).onChange((v) => {
         settings.personalizationEnabled = v;
@@ -1046,10 +991,7 @@ export function buildPredictiveSettingGroups(
 
   row()
     .setName(t("ui.name.ShareFileVaultPath"))
-    .setDesc(
-      "Only used by the Export/Import buttons below. This is not where personalization " +
-        "lives; the live data is always personalization.json in the plugin folder.",
-    )
+    .setDesc(t("ui.help.UsedByExportimportButtonsBelow"))
     .addText((t) =>
       t
         .setValue(settings.personalizationSharePath)
