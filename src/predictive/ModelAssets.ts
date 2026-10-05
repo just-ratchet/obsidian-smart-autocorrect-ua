@@ -25,7 +25,10 @@ export interface AssetSpec {
   /** What the user loses if this one is missing - shown in the consent dialog.
    *  A key, not a string: MODEL_ASSETS is a module-level constant, so resolving it
    *  eagerly would freeze the language at import time, before the UI locale is read. */
-  purposeKey: "assets.purpose.lstm" | "assets.purpose.ngram" | "assets.purpose.wordlist";
+  purposeKey:
+    | "assets.purpose.lstm"
+    | "assets.purpose.ngram"
+    | "assets.purpose.wordlist";
 }
 
 /**
@@ -42,28 +45,27 @@ export interface AssetSpec {
  * single word they type. Update OWNER below to the account hosting the release.
  */
 export const RELEASE_TAG = "models-uk-1";
-const OWNER = "YOUR-GITHUB-USERNAME";
+const OWNER = "just-ratchet";
 const REPO = "obsidian-smart-autocorrect-ua";
-export const ASSET_BASE =
-  `https://github.com/${OWNER}/${REPO}/releases/download/${RELEASE_TAG}`;
+export const ASSET_BASE = `https://github.com/${OWNER}/${REPO}/releases/download/${RELEASE_TAG}`;
 
 export const MODEL_ASSETS: AssetSpec[] = [
   {
     file: "word_lstm.bin",
-    bytes: 57665197,
-    sha256: "be91e9d4f59786e5623bea9dbf908b1d7508b3445225d6ad03a922b01a8ae468",
+    bytes: 36842260,
+    sha256: "1f62249f6518ba21307c1d51a8e98375ef0dc0cd61a789a028dd885b426c06dd",
     purposeKey: "assets.purpose.lstm",
   },
   {
     file: "predictive-global.bin",
-    bytes: 26274133,
-    sha256: "803270d341771ab87eac3d382b3540b1f027a309b036b937cd6226e5c9697c69",
+    bytes: 76221692,
+    sha256: "1fe1aa4d306030cbbb807ba154bafbbaf397b059a7f9f1c376cc73de9d2d3204",
     purposeKey: "assets.purpose.ngram",
   },
   {
     file: "wordlist.bin",
-    bytes: 2804013,
-    sha256: "598418c15388fb3f67acbb59161a409b42bb4af72ef40f5c8c42440451ab1c6e",
+    bytes: 26988898,
+    sha256: "6cd9eeb496cd678ee0055d5e2f8d27865ba4907391f51cd343b4546638a42639",
     purposeKey: "assets.purpose.wordlist",
   },
 ];
@@ -109,7 +111,10 @@ export async function downloadAssets(
     const label = `${a.file} (${Math.round(a.bytes / MB)} MB, ${i + 1}/${assets.length})`;
     onProgress?.(t("assets.downloading", { label }));
     try {
-      const res = await requestUrl({ url: `${ASSET_BASE}/${a.file}`, method: "GET" });
+      const res = await requestUrl({
+        url: `${ASSET_BASE}/${a.file}`,
+        method: "GET",
+      });
       const buf = res.arrayBuffer;
       if (buf.byteLength !== a.bytes) {
         throw new Error(`expected ${a.bytes} bytes, got ${buf.byteLength}`);
@@ -117,13 +122,16 @@ export async function downloadAssets(
       // Skip the digest check only when the release was published without one.
       if (!a.sha256.startsWith("__")) {
         const got = await sha256Hex(buf);
-        if (got !== a.sha256) throw new Error(`checksum mismatch (${got.slice(0, 12)}…)`);
+        if (got !== a.sha256)
+          throw new Error(`checksum mismatch (${got.slice(0, 12)}…)`);
       }
       await adapter.writeBinary(`${dir}/${a.file}`, buf);
       done.push(a);
     } catch (e) {
       console.error(`[smart-autocorrect] could not download ${a.file}`, e);
-      onProgress?.(t("assets.failed", { file: a.file, message: (e as Error).message }));
+      onProgress?.(
+        t("assets.failed", { file: a.file, message: (e as Error).message }),
+      );
       return done;
     }
   }
@@ -161,13 +169,13 @@ export class AssetConsentModal extends Modal {
     contentEl.createEl("p", { text: t("assets.skip") });
     new Setting(contentEl)
       .addButton((b) =>
-        b
-          .setButtonText(t("assets.notNow"))
-          .onClick(() => this.finish(false)),
+        b.setButtonText(t("assets.notNow")).onClick(() => this.finish(false)),
       )
       .addButton((b) =>
         b
-          .setButtonText(t("assets.download", { size: totalMegabytes(this.assets) }))
+          .setButtonText(
+            t("assets.download", { size: totalMegabytes(this.assets) }),
+          )
           .setCta()
           .onClick(() => this.finish(true)),
       );
@@ -187,14 +195,19 @@ export class AssetConsentModal extends Modal {
 }
 
 export function askForAssets(app: App, assets: AssetSpec[]): Promise<boolean> {
-  return new Promise((resolve) => new AssetConsentModal(app, assets, resolve).open());
+  return new Promise((resolve) =>
+    new AssetConsentModal(app, assets, resolve).open(),
+  );
 }
 
 /**
  * Full first-run flow: work out what is missing, ask, fetch, report.
  * Returns true if anything new was written (so the caller can reload the models).
  */
-export async function ensureAssets(plugin: Plugin, force = false): Promise<boolean> {
+export async function ensureAssets(
+  plugin: Plugin,
+  force = false,
+): Promise<boolean> {
   const missing = await missingAssets(plugin);
   if (missing.length === 0) {
     if (force) new Notice(t("assets.alreadyInstalled"));
@@ -203,12 +216,17 @@ export async function ensureAssets(plugin: Plugin, force = false): Promise<boole
   if (!(await askForAssets(plugin.app, missing))) return false;
 
   const notice = new Notice(t("assets.starting"), 0);
-  const got = await downloadAssets(plugin, missing, (m) => notice.setMessage(m));
+  const got = await downloadAssets(plugin, missing, (m) =>
+    notice.setMessage(m),
+  );
   notice.hide();
   if (got.length === missing.length) {
     new Notice(t("assets.installed"), 6000);
     return true;
   }
-  new Notice(t("assets.partial", { got: got.length, total: missing.length }), 9000);
+  new Notice(
+    t("assets.partial", { got: got.length, total: missing.length }),
+    9000,
+  );
   return got.length > 0;
 }

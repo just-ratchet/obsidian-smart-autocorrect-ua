@@ -22,7 +22,7 @@
 
 ### Вручну
 
-1. Завантажте `main.js`, `manifest.json`, `styles.css` з [останнього релізу](../../releases/latest)
+1. Завантажте `main.js`, `manifest.json`, `styles.css` з [останнього релізу](https://github.com/just-ratchet/obsidian-smart-autocorrect-ua/releases/latest)
 2. Покладіть їх у `<сховище>/.obsidian/plugins/smart-autocorrect-ua/`
 3. Перезапустіть Obsidian і увімкніть плагін у налаштуваннях
 
@@ -30,7 +30,7 @@
 
 > [!important]
 > **Доступ до мережі.** Під час першого запуску плагін запитує дозвіл завантажити мовні моделі
-> (**близько 134 МБ**) з розділу [Releases](../../releases) **цього** репозиторію на GitHub.
+> (**близько 134 МБ**) з розділу [Releases](https://github.com/just-ratchet/obsidian-smart-autocorrect-ua/releases) **цього** репозиторію на GitHub.
 > Нічого не завантажується без вашої явної згоди, і відмова запам'ятовується.
 > Це єдиний мережевий запит, який робить плагін: звичайний `GET` публічного файлу релізу.
 > **Жодні дані не надсилаються** — ні вміст нотаток, ні ідентифікатори, ні телеметрія.

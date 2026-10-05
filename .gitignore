@@ -1,15 +1,6 @@
-# npm
-node_modules
-
-# build output (attached to releases instead)
+node_modules/
 main.js
-*.js.map
-
-# editors
-.idea
-*.iml
-
-# model assets are downloaded at runtime, never committed
-word_lstm.bin
-predictive-global.bin
-wordlist.bin
+*.bin
+build_model/_*.json
+package-lock.json
+.DS_Store
