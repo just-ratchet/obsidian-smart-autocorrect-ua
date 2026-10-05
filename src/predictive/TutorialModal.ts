@@ -14,14 +14,16 @@
  * Each step is one line of text and one picture, because that is what gets read.
  */
 import { Modal, Setting } from "obsidian";
-import { t } from "./i18n";
+import { t, type MessageKey } from "./i18n";
 import type { App } from "obsidian";
 import { TUTORIAL_IMAGES } from "./tutorialImages";
 
 export interface TutorialStep {
-  title: string;
+  /** Message KEYS, not text: TUTORIAL_STEPS is a module-level constant, so resolving
+   *  t() here would freeze the language at import time (same reason as MODEL_ASSETS). */
+  titleKey: MessageKey;
   /** One sentence. If it needs two, it is two steps or it is not a need-to-know. */
-  body: string;
+  bodyKey: MessageKey;
   /** Keys the step is about, drawn as keycaps under the text. */
   keys?: string[];
   /** Key into TUTORIAL_IMAGES. The step renders without it if no picture is bundled. */
@@ -29,37 +31,10 @@ export interface TutorialStep {
 }
 
 export const TUTORIAL_STEPS: TutorialStep[] = [
-  {
-    title: "Press Tab to accept",
-    body:
-      "As you type, likely next words appear. Press Tab to take the highlighted one, or just " +
-      "keep typing to ignore it.",
-    keys: ["Tab"],
-    image: "suggest",
-  },
-  {
-    title: "Typos fix themselves",
-    body:
-      "Finish a word with a space or punctuation and an obvious misspelling is fixed for you, " +
-      "the way a phone keyboard does. Capital letters are handled too.",
-    keys: ["Space"],
-    image: "autocorrect",
-  },
-  {
-    title: "Wrong correction? Just undo",
-    body:
-      "Changed a word you meant to keep? Press Ctrl/Cmd-Z. Your original comes straight back, " +
-      "and it won't change that word again.",
-    keys: ["Ctrl", "Z"],
-    image: "undo",
-  },
-  {
-    title: "See what you've saved",
-    body:
-      "The counter in the status bar adds up the keystrokes you've saved. Click it any time for " +
-      "your streak, time saved, and more.",
-    image: "stats",
-  },
+  { titleKey: "ui.tut.1.title", bodyKey: "ui.tut.1.body", keys: ["Tab"], image: "suggest" },
+  { titleKey: "ui.tut.2.title", bodyKey: "ui.tut.2.body", keys: ["Space"], image: "autocorrect" },
+  { titleKey: "ui.tut.3.title", bodyKey: "ui.tut.3.body", keys: ["Ctrl", "Z"], image: "undo" },
+  { titleKey: "ui.tut.4.title", bodyKey: "ui.tut.4.body", image: "stats" },
 ];
 
 export class TutorialModal extends Modal {
@@ -96,8 +71,8 @@ export class TutorialModal extends Modal {
     root.empty();
     root.addClass("smart-autocorrect-tutorial");
 
-    root.createEl("h2", { text: s.title, cls: "sa-tut-title" });
-    root.createEl("p", { text: s.body, cls: "sa-tut-body" });
+    root.createEl("h2", { text: t(s.titleKey), cls: "sa-tut-title" });
+    root.createEl("p", { text: t(s.bodyKey), cls: "sa-tut-body" });
 
     if (s.keys?.length) {
       const keys = root.createDiv({ cls: "sa-tut-keys" });
@@ -127,7 +102,7 @@ export class TutorialModal extends Modal {
     else nav.addButton((b) => b.setButtonText(t("ui.btn.Skip")).onClick(() => this.close()));
     nav.addButton((b) =>
       b
-        .setButtonText(last ? "Start writing" : "Next")
+        .setButtonText(last ? t("ui.btn.StartWriting") : "Next")
         .setCta()
         .onClick(() => this.go(1)),
     );

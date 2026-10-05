@@ -225,6 +225,17 @@ const en = {
   "ui.opt.Comma": "$1,000 (comma)",
   "ui.opt.Period": "$1.000 (period)",
   "ui.opt.NoneSep": "$1000 (none)",
+
+  // --- getting-started tour ---
+  "ui.tut.1.title": "Press Tab to accept",
+  "ui.tut.1.body": "As you type, likely next words appear. Press Tab to take the highlighted one, or just keep typing to ignore it.",
+  "ui.tut.2.title": "Typos fix themselves",
+  "ui.tut.2.body": "Finish a word with a space or punctuation and an obvious misspelling is fixed for you, the way a phone keyboard does. Capital letters are handled too.",
+  "ui.tut.3.title": "Wrong correction? Just undo",
+  "ui.tut.3.body": "Changed a word you meant to keep? Press Ctrl/Cmd-Z. Your original comes straight back, and it won't change that word again.",
+  "ui.tut.4.title": "See what you've saved",
+  "ui.tut.4.body": "The counter in the status bar adds up the keystrokes you've saved. Click it any time for your streak, time saved, and more.",
+  "ui.btn.StartWriting": "Start writing",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -433,6 +444,17 @@ const uk: Partial<Record<MessageKey, string>> = {
   "ui.opt.Comma": "1 000 (пробіл-кома)",
   "ui.opt.Period": "1.000 (точка)",
   "ui.opt.NoneSep": "1000 (без розділювача)",
+
+  // --- getting-started tour ---
+  "ui.tut.1.title": "Tab — щоб прийняти",
+  "ui.tut.1.body": "Під час набору з’являються ймовірні наступні слова. Натисніть Tab, щоб узяти виділене, або просто пишіть далі, щоб проігнорувати.",
+  "ui.tut.2.title": "Одруківки виправляються самі",
+  "ui.tut.2.body": "Завершіть слово пробілом або знаком пунктуації — і очевидна помилка виправиться сама, як на клавіатурі телефона. Великі літери теж.",
+  "ui.tut.3.title": "Виправило неправильно? Просто скасуйте",
+  "ui.tut.3.body": "Змінило слово, яке ви хотіли лишити? Натисніть Ctrl/Cmd-Z. Ваш варіант одразу повернеться, і це слово більше не змінюватиметься.",
+  "ui.tut.4.title": "Дивіться, скільки зекономлено",
+  "ui.tut.4.body": "Лічильник у смузі стану додає зекономлені натискання. Клацніть будь-коли, щоб побачити серію, збережений час та інше.",
+  "ui.btn.StartWriting": "Почати писати",
 };
 
 const LOCALES: Record<string, Partial<Record<MessageKey, string>>> = { uk };
