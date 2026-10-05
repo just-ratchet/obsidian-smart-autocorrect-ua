@@ -4,6 +4,7 @@
  * and an add field at the bottom. Mutates the live settings object and calls `onChange` to persist.
  */
 import { Modal, Notice, Setting } from "obsidian";
+import { t } from "./i18n";
 import type { App } from "obsidian";
 import type { PredictiveSettings } from "./PredictiveSettings";
 
@@ -94,15 +95,15 @@ export class DictionaryModal extends Modal {
 
     let pending = "";
     new Setting(el)
-      .setName("Add a word")
+      .setName(t("ui.name.AddWord"))
       .addText((t) => {
-        t.setPlaceholder("word");
+        t.setPlaceholder(t("ui.ph.Word"));
         t.onChange((v) => (pending = v));
         t.inputEl.addEventListener("keydown", (e) => {
           if (e.key === "Enter") { e.preventDefault(); void add(t.getValue()); }
         });
       })
-      .addButton((b) => b.setButtonText("Add").setCta().onClick(() => void add(pending)));
+      .addButton((b) => b.setButtonText(t("ui.btn.Add")).setCta().onClick(() => void add(pending)));
   }
 
   onClose(): void {

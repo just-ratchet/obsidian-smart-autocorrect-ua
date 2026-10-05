@@ -1,56 +1,111 @@
-<div align="center">
+# Smart Autocorrect UA
 
-# ✍️ Smart Autocorrect for Obsidian
+Автодоповнення, виправлення одруківок і підказки посилань **українською** для [Obsidian](https://obsidian.md). Усе працює локально на вашому пристрої.
 
-**Phone-style autocorrect and next-word prediction, right inside your vault.**
+Це українська версія плагіна [Smart Autocorrect](https://github.com/Zangeti/obsidian-smart-autocorrect) від [Zangeti](https://github.com/Zangeti): оригінал розуміє лише латиницю, тут перероблено розпізнавання слів під кирилицю й замінено мовні моделі на навчені на українському корпусі.
 
-It runs completely offline, so your notes stay private and never leave your device.
+## Можливості
 
-[![release](https://img.shields.io/github/v/release/Zangeti/obsidian-smart-autocorrect?style=flat-square)](https://github.com/Zangeti/obsidian-smart-autocorrect/releases/latest) &nbsp;·&nbsp; ![downloads](https://img.shields.io/github/downloads/Zangeti/obsidian-smart-autocorrect/total?style=flat-square)
+- **Передбачення наступного слова** — пропонує продовження на основі написаного
+- **Завершення слів** — словник на 1.37 млн українських словоформ
+- **Виправлення одруківок** — виправляє очевидні помилки після пробілу; `Ctrl/Cmd+Z` повертає ваше слово й більше його не змінює
+- **Навчання на ваших нотатках** — підказки схиляються до вашої лексики та зворотів
+- **Особистий словник** — слова, які не треба «виправляти»
+- **Підказки посилань** — пропонує дотичні нотатки зі сховища
+- **Інтерфейс українською** — перекладається автоматично, якщо Obsidian налаштований на українську
 
-</div>
+## Встановлення
 
-<p align="center">
-  <img src="docs/demo.gif" alt="Smart Autocorrect predicting the next word as you type">
-</p>
+### З каталогу спільноти
 
-## ⚡ As you type
+*(після публікації)* **Налаштування → Плагіни спільноти → Огляд → Smart Autocorrect UA**
 
-- **Real-time autocorrect.** Typos are fixed automatically as you write.
-- **Next-word and phrase completion.** A popup predicts what comes next. Press `Tab` to accept.
-- **Contextual suggestions.** It reads the sentence you're writing and your other notes.
-- **100% local.** Everything runs on-device. No cloud, no telemetry, no account.
+### Вручну
 
-## ✨ Additional features
+1. Завантажте `main.js`, `manifest.json`, `styles.css` з [останнього релізу](../../releases/latest)
+2. Покладіть їх у `<сховище>/.obsidian/plugins/smart-autocorrect-ua/`
+3. Перезапустіть Obsidian і увімкніть плагін у налаштуваннях
 
-- **Suggest alternatives.** Right-click any word for more eloquent wording (good becomes *substantial*, help becomes *facilitate*, big becomes *immense*).
-- **Smart capitalisation.** Sentence starts, names and places, and abbreviations like `e.g.` and `U.S.` are handled for you.
-- **Learns your writing.** Words from your own notes come up first. Made a wrong correction? Just undo with `Ctrl/Cmd+Z`: it restores your text, remembers the word, and stops correcting it.
-- **Note links** *(experimental)*. Text that matches one of your notes gets underlined; hover to preview, click to link.
-- **Writing stats.** See keystrokes saved, typing time saved, and your daily streak.
+## Мовні моделі
 
-<p align="center">
-  <img src="docs/stats.png" width="460" alt="The writing stats dashboard, showing keystrokes saved, typing time saved and current streak">
-</p>
+> [!important]
+> **Доступ до мережі.** Під час першого запуску плагін запитує дозвіл завантажити мовні моделі
+> (**близько 134 МБ**) з розділу [Releases](../../releases) **цього** репозиторію на GitHub.
+> Нічого не завантажується без вашої явної згоди, і відмова запам'ятовується.
+> Це єдиний мережевий запит, який робить плагін: звичайний `GET` публічного файлу релізу.
+> **Жодні дані не надсилаються** — ні вміст нотаток, ні ідентифікатори, ні телеметрія.
+> Кожен файл перевіряється за розміром і SHA-256 перед записом, тож обрізане або підмінене
+> завантаження не стане моделлю. Моделі можна не завантажувати: плагін працює й без них
+> (у спрощеному режимі) і вчиться на ваших нотатках.
 
-## 🚀 Getting started
+| Файл | Розмір | Призначення |
+|---|---|---|
+| `word_lstm.bin` | ~35 МБ | передбачення наступного слова, завершення фраз, великі літери |
+| `predictive-global.bin` | ~73 МБ | частотна модель слів для оцінювання виправлень |
+| `wordlist.bin` | ~26 МБ | список відомих слів, щоб справжні слова не «виправлялися» |
 
-1. Install and enable the plugin.
-2. Accept the one-time model download (86 MB) when prompted.
-3. Start typing. There's nothing to configure; everything in settings is optional.
+Усі моделі виконуються **локально**. Після завантаження плагін більше не звертається до мережі.
 
-## 🔒 Privacy
+## Дані для навчання
 
-100% local, with no telemetry and no cloud. The only network request is the one-time model download, which you can decline. Anything the plugin learns lives in `personalization.json` inside the plugin folder, so it travels with your vault and never touches your notes.
+Моделі навчено на корпусі [**UberText 2.0**](https://lang.org.ua/en/ubertext/) — 3.3 млрд токенів сучасної української (новини, художня література, Вікіпедія, соцмережі, судові рішення). Вибірку зважено на користь художньої літератури та соцмереж, щоб підказки відповідали живому письму, а не канцеляриту.
 
-**Supported languages:** English only. If you'd like another language, please [open an issue](https://github.com/Zangeti/obsidian-smart-autocorrect/issues).
+```bibtex
+@inproceedings{chaplynskyi-2023-introducing,
+    title = "Introducing {U}ber{T}ext 2.0: A Corpus of Modern {U}krainian at Scale",
+    author = "Chaplynskyi, Dmytro",
+    booktitle = "Proceedings of the Second Ukrainian Natural Language Processing Workshop (UNLP)",
+    year = "2023",
+    url = "https://aclanthology.org/2023.unlp-1.1",
+}
+```
 
-## ☕ Support
+Корпус UberText 2.0 — © [Дмитро Чаплинський](https://twitter.com/dchaplinsky), проєкт [lang-uk](https://lang.org.ua).
 
-If this saves you time, you can [buy me a coffee](https://buymeacoffee.com/zangeti).
+## Приватність
 
-<a href="https://buymeacoffee.com/zangeti"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy me a coffee" height="46"></a>
+- Усе обчислюється на вашому пристрої — нотатки нікуди не надсилаються
+- Жодної телеметрії, жодної аналітики, жодних облікових записів
+- Єдиний мережевий запит — одноразове завантаження моделей з вашої згоди (див. вище)
+- Персоналізація зберігається у сховищі, разом із вашими нотатками
 
-## Credits
+## Збірка з джерел
 
-Started as a fork of [Various Complements](https://github.com/tadashi-aikawa/obsidian-various-complements-plugin) by Tadashi Aikawa, since rewritten around a local neural language model. MIT licensed.
+```bash
+npm install --legacy-peer-deps
+node esbuild.config.mjs production     # створює main.js
+```
+
+> [!warning]
+> Не запускайте `vendor-engine.mjs` — він видаляє `src/predictive/engine/` перед копіюванням
+> із сусіднього репозиторію, якого в цьому форку немає. `esbuild.config.mjs` сам перегенеровує
+> вбудований воркер.
+
+### Побудова моделей
+
+Скрипти лежать у `build_model/`. Потрібні Node 22+ та Python з PyTorch.
+
+```bash
+# n-gram модель
+node --experimental-strip-types --max-old-space-size=40960 build_ngram.mjs out.bin \
+  --src=corpus/fiction.txt --src=corpus/news.txt:600 --minUni=30 --minNgram=3
+
+# LSTM
+python build_model/train_lstm.py --corpus corpus/fiction.txt --epochs 1
+python build_model/train_lstm.py --resume ckpt/lstm.pt --export-only --out word_lstm.bin
+
+# перевірка формату завантажувачем самого плагіна
+node --experimental-strip-types build_model/check_lstm.mjs word_lstm.bin
+```
+
+## Подяки
+
+- [Zangeti](https://github.com/Zangeti) — оригінальний плагін [Smart Autocorrect](https://github.com/Zangeti/obsidian-smart-autocorrect) і вся його архітектура (LSTM-рантайм, n-gram рушій, автокорекція)
+- [Дмитро Чаплинський](https://github.com/dchaplinsky) та [lang-uk](https://lang.org.ua) — корпус UberText 2.0
+
+## Ліцензія
+
+[MIT](LICENSE) — як і в оригіналі.
+
+Copyright (c) 2026 Zangeti (оригінальний плагін)
+Copyright (c) 2026 автори української версії (адаптація під кирилицю, моделі, переклад)

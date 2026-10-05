@@ -4,6 +4,7 @@
  * matching the design.
  */
 import { PaneBuilder, renderPaneGroups } from "./settingsPane";
+import { t } from "./i18n";
 import type { PaneGroup } from "./settingsPane";
 import { parseExcludeList } from "./engine/index";
 import type { KeyboardLayoutName } from "./engine/index";
@@ -356,8 +357,8 @@ export function buildPredictiveSettingGroups(
 
   // --- master switch + resets, right at the top ---------------------------
   row()
-    .setName("Enable Smart Autocorrect")
-    .setDesc("Master switch. Off = nothing runs (no autocorrect, predictions, ghost text, or link/tag suggestions), but the plugin stays installed and your settings and learned personalization are kept.")
+    .setName(t("ui.name.EnableSmartAutocorrect"))
+    .setDesc(t("ui.desc.MasterSwitchOffNothingRuns"))
     .addToggle((t) =>
       t.setValue(settings.pluginEnabled).onChange((v) => {
         settings.pluginEnabled = v;
@@ -368,22 +369,22 @@ export function buildPredictiveSettingGroups(
 
   if (personalization) {
     row()
-      .setName("Getting started")
-      .setDesc("A quick tour: accepting a suggestion, how typos get fixed, undoing a correction you didn't want, and where to find your stats.")
-      .addButton((btn) => btn.setButtonText("Show me").onClick(() => personalization.onOpenTutorial()));
+      .setName(t("ui.name.GettingStarted"))
+      .setDesc(t("ui.desc.QuickTourAcceptingSuggestionHow"))
+      .addButton((btn) => btn.setButtonText(t("ui.btn.ShowMe")).onClick(() => personalization.onOpenTutorial()));
     row()
-      .setName("Reset settings")
-      .setDesc("Put every option in this menu back to its default. Your personal dictionary and everything the plugin has learned about how you write are kept. Asks you to confirm first.")
-      .addButton((b) => b.setButtonText("Reset settings").onClick(() => personalization.onResetSettings()));
+      .setName(t("ui.name.ResetSettings"))
+      .setDesc(t("ui.desc.PutEveryOptionMenuBack"))
+      .addButton((b) => b.setButtonText(t("ui.name.ResetSettings")).onClick(() => personalization.onResetSettings()));
     row()
-      .setName("Factory reset")
-      .setDesc("Wipe everything this plugin stores - settings, personalization, statistics and your personal dictionary. Can't be undone.")
+      .setName(t("ui.name.FactoryReset"))
+      .setDesc(t("ui.desc.WipeEverythingPluginStoresSettings"))
       .addButton((b) => {
         // mod-warning (the red destructive style) is applied by the CSS class directly rather
         // than ButtonComponent.setWarning(): setWarning is deprecated and its replacement
         // setDestructive() is newer than our declared minAppVersion, so calling either trips the
         // plugin scanner. The class has been stable for years and works on every version.
-        b.setButtonText("Factory reset").onClick(() => personalization.onFactoryReset());
+        b.setButtonText(t("ui.name.FactoryReset")).onClick(() => personalization.onFactoryReset());
         b.buttonEl.addClass("mod-warning");
       });
 
@@ -419,11 +420,11 @@ export function buildPredictiveSettingGroups(
       qr.height = 130;
     });
     row()
-      .setName("Writing stats")
-      .setDesc("Your streak, time saved, milestones, and what the plugin has learned. Stored with your vault, so the numbers are the same on every device.")
-      .addButton((b) => b.setButtonText("See your stats").setCta().onClick(() => personalization.onOpenStats()))
+      .setName(t("ui.name.WritingStats"))
+      .setDesc(t("ui.desc.StreakTimeSavedMilestonesWhat"))
+      .addButton((b) => b.setButtonText(t("ui.btn.SeeStats")).setCta().onClick(() => personalization.onOpenStats()))
       .addButton((b) => {
-        b.setButtonText("Reset statistics").onClick(() => personalization.onResetStats());
+        b.setButtonText(t("ui.btn.ResetStatistics")).onClick(() => personalization.onResetStats());
         b.buttonEl.addClass("mod-warning"); // see the Factory-reset button for why the class, not setWarning()
       });
   }
@@ -436,8 +437,8 @@ export function buildPredictiveSettingGroups(
   b.group("Predictions & autocorrect");
 
   row()
-    .setName("Predictive text (suggest the next word)")
-    .setDesc("Suggests likely next words from what you've written so far. Turn off to hide all suggestions.")
+    .setName(t("ui.name.PredictiveTextSuggestNextWord"))
+    .setDesc(t("ui.desc.SuggestsLikelyNextWordsFrom"))
     .addToggle((t) =>
       t.setValue(settings.enablePredictions).onChange((v) => {
         settings.enablePredictions = v;
@@ -446,8 +447,8 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Autocorrect typos when you press space")
-    .setDesc("Fixes an obvious misspelling when you finish a word with a space or punctuation, like a phone keyboard. Wrong correction? Just undo (Ctrl/Cmd-Z) — your word comes back and it won't be changed again.")
+    .setName(t("ui.name.AutocorrectTyposWhenYouPress"))
+    .setDesc(t("ui.desc.FixesObviousMisspellingWhenYou"))
     .addToggle((t) =>
       t.setValue(settings.autocorrectOnSpace).onChange((v) => {
         settings.autocorrectOnSpace = v;
@@ -456,7 +457,7 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Autocorrect strength (information gain)")
+    .setName(t("ui.name.AutocorrectStrengthInformationGain"))
     .setDesc(
       "How surprising the typed word must be, versus the best alternative, before it's replaced (Shannon information gain, in nats). The single control for how readily it corrects: lower = corrects even mildly-off words; higher = only fixes words that are very unlikely in context.",
     )
@@ -471,7 +472,7 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Remove accidental doubled words")
+    .setName(t("ui.name.RemoveAccidentalDoubledWords"))
     .setDesc(
       'Delete a repeated function word as you type ("the the" → "the"). Only words that are ' +
         'never validly doubled are touched, so "had had" and "that that" are left alone.',
@@ -484,7 +485,7 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Auto-capitalise sentences & names")
+    .setName(t("ui.name.AutoCapitaliseSentencesNames"))
     .setDesc('Capitalises the start of a sentence (and leaves "U.S.", "e.g." and decimals alone), fixes "THe" → "The", and capitalises names like "london" → "London".')
     .addToggle((t) =>
       t.setValue(settings.autoCapitalize).onChange((v) => {
@@ -494,8 +495,8 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Prefer words from my own notes")
-    .setDesc("Leans suggestions toward the words and phrasing you already use.")
+    .setName(t("ui.name.PreferWordsFromOwnNotes"))
+    .setDesc(t("ui.desc.LeansSuggestionsTowardWordsPhrasing"))
     .addToggle((t) =>
       t.setValue(settings.personalBias).onChange((v) => {
         settings.personalBias = v;
@@ -510,8 +511,8 @@ export function buildPredictiveSettingGroups(
   );
 
   row()
-    .setName("Vault influence")
-    .setDesc("How much your own notes outweigh the general dictionary. Higher = more personalised, lower = more generic.")
+    .setName(t("ui.name.VaultInfluence"))
+    .setDesc(t("ui.desc.HowMuchOwnNotesOutweigh"))
     .addSlider((s) =>
       s
         .setLimits(0, 1, 0.05)
@@ -523,8 +524,8 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Neural vs. word-frequency blend")
-    .setDesc("How much the neural (LSTM) next-word model influences suggestions and corrections, vs the word-frequency model. 0 = word-frequency only; 1 = neural only. Only applies when a neural model is installed.")
+    .setName(t("ui.name.NeuralVsWordFrequencyBlend"))
+    .setDesc(t("ui.desc.HowMuchNeuralLstmNext"))
     .addSlider((s) =>
       s
         .setLimits(0, 1, 0.05)
@@ -536,8 +537,8 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Trust typing vs. context (β)")
-    .setDesc("When a typo is ambiguous: higher trusts the exact letters you typed, lower trusts what the sentence expects.")
+    .setName(t("ui.name.TrustTypingVsContext"))
+    .setDesc(t("ui.desc.WhenTypoAmbiguousHigherTrusts"))
     .addSlider((s) =>
       s
         .setLimits(0.2, 3, 0.1)
@@ -549,7 +550,7 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Words that aren't sentence ends")
+    .setName(t("ui.name.WordsArenTSentenceEnds"))
     .setDesc('Comma-separated abbreviations that should NOT trigger capitalisation after their period, e.g. "approx., dept.".')
     .addTextArea((t) =>
       t
@@ -566,17 +567,17 @@ export function buildPredictiveSettingGroups(
   if (personalization) {
     const count = settings.userDictionary.length;
     row()
-      .setName("Personal dictionary")
+      .setName(t("ui.name.PersonalDictionary"))
       .setDesc(
         `Words that are always correct as written, so they're never autocorrected or re-cased ` +
           `(${count} word${count === 1 ? "" : "s"}). Open the manager to see, add, or remove them.`,
       )
-      .addButton((b) => b.setButtonText("Manage dictionary").onClick(() => personalization.onOpenDictionary()));
+      .addButton((b) => b.setButtonText(t("ui.btn.ManageDictionary")).onClick(() => personalization.onOpenDictionary()));
   }
 
   row()
-    .setName("Suggest personal dictionary words")
-    .setDesc("Offer your dictionary words as completions too, not just protect them from autocorrect.")
+    .setName(t("ui.name.SuggestPersonalDictionaryWords"))
+    .setDesc(t("ui.desc.OfferDictionaryWordsAsCompletions"))
     .addToggle((t) =>
       t.setValue(settings.suggestUserDictionary).onChange((v) => {
         settings.suggestUserDictionary = v;
@@ -585,7 +586,7 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Undo adds the word to your dictionary")
+    .setName(t("ui.name.UndoAddsWordDictionary"))
     .setDesc(
       "When you undo an autocorrection (Ctrl/Cmd-Z), add that word to your personal dictionary " +
         "above so it's never corrected again. Your dictionary is the plugin's don't-touch list.",
@@ -598,7 +599,7 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Learn abbreviations when you undo a capital")
+    .setName(t("ui.name.LearnAbbreviationsWhenYouUndo"))
     .setDesc(
       "When you undo a capital letter that was added after an abbreviation (e.g. undoing the " +
         "capital in “etc. Then” back to “then”), remember that word so the plugin stops " +
@@ -612,7 +613,7 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Forget dictionary words removed from the vault")
+    .setName(t("ui.name.ForgetDictionaryWordsRemovedFrom"))
     .setDesc(
       "When a word in your personal dictionary no longer appears in any note, drop it " +
         "automatically. Keeps the dictionary to words you actually write.",
@@ -625,7 +626,7 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Filter profanity & NSFW words")
+    .setName(t("ui.name.FilterProfanityNsfwWords"))
     .setDesc(
       "Never suggest or autocorrect to swear words, slurs, or explicit terms. " +
         "This only affects what the plugin offers. Anything you type yourself is left exactly " +
@@ -643,7 +644,7 @@ export function buildPredictiveSettingGroups(
   b.group("Accuracy boosters", true);
   b.note("Each makes corrections smarter for a different kind of mistake. All recommended on.");
   row()
-    .setName("Keyboard-typo strength")
+    .setName(t("ui.name.KeyboardTypoStrength"))
     .setDesc('How much nearby-key slips are trusted as typos ("teh" → "the"). Higher = more keyboard corrections; 0 = ignore keyboard geometry entirely.')
     .addSlider((s) =>
       s
@@ -655,7 +656,7 @@ export function buildPredictiveSettingGroups(
         }),
     );
   row()
-    .setName("Sound-alike strength")
+    .setName(t("ui.name.SoundAlikeStrength"))
     .setDesc('How much sound-alike spellings are trusted, independent of keyboard distance ("fone" → "phone", "definately" → "definitely"). Higher = more phonetic corrections; 0 = off.')
     .addSlider((s) =>
       s
@@ -672,8 +673,8 @@ export function buildPredictiveSettingGroups(
   toggle("Adapt to my typing", "Learns the particular key mistakes you tend to make, and corrects them better over time.", "adaptiveKeyboard");
   toggle("Rank by what I pick", "Reorders suggestions based on which ones you actually choose.", "learnedRanking");
   row()
-    .setName("Favour words from this note")
-    .setDesc("Gives a small boost to words you've already used in the note you're writing, so suggestions stay on topic. 0 turns it off.")
+    .setName(t("ui.name.FavourWordsFromNote"))
+    .setDesc(t("ui.desc.GivesSmallBoostWordsYou"))
     .addSlider((s) =>
       s
         .setLimits(0, 0.5, 0.05)
@@ -685,8 +686,8 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Suggestions shown")
-    .setDesc("How many suggestions appear in the popup at once.")
+    .setName(t("ui.name.SuggestionsShown"))
+    .setDesc(t("ui.desc.HowManySuggestionsAppearPopup"))
     .addSlider((s) =>
       s
         .setLimits(1, 8, 1)
@@ -698,7 +699,7 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Start suggesting after")
+    .setName(t("ui.name.StartSuggestingAfter"))
     .setDesc(
       "How many letters of a word you must type before completions appear. 1 = as soon as " +
         "you start a word; higher cuts noise on very short prefixes. Next-word prediction " +
@@ -715,7 +716,7 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Accept suggestion with")
+    .setName(t("ui.name.AcceptSuggestionWith"))
     .setDesc(
       "The key that inserts the highlighted suggestion. Only this key accepts; the " +
         "others keep their normal behaviour, so if you pick Tab then Enter still starts " +
@@ -730,7 +731,7 @@ export function buildPredictiveSettingGroups(
     });
 
   row()
-    .setName("Tab indents bullets only from the start")
+    .setName(t("ui.name.TabIndentsBulletsOnlyFrom"))
     .setDesc(
       "Like Word: Tab only indents a list item when the cursor is right after the bullet. " +
         "Mid-item, Tab does nothing, so a Tab meant to accept a suggestion can't shove the " +
@@ -744,7 +745,7 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Tidy double spaces")
+    .setName(t("ui.name.TidyDoubleSpaces"))
     .setDesc(
       "When you complete a word that has a double space before it, collapse it to one.",
     )
@@ -769,8 +770,8 @@ export function buildPredictiveSettingGroups(
     "currencyWordToSymbol",
   );
   row()
-    .setName("Thousands separator")
-    .setDesc("Which grouping to use inside a currency amount.")
+    .setName(t("ui.name.ThousandsSeparator"))
+    .setDesc(t("ui.desc.WhichGroupingUseInsideCurrency"))
     .addDropdown((d) =>
       d
         .addOption("comma", "$1,000 (comma)")
@@ -783,8 +784,8 @@ export function buildPredictiveSettingGroups(
         }),
     );
   row()
-    .setName("Euro sign position")
-    .setDesc("The euro is the one sign whose side genuinely varies by locale. Everything else follows its own convention.")
+    .setName(t("ui.name.EuroSignPosition"))
+    .setDesc(t("ui.desc.EuroOneSignWhoseSide"))
     .addDropdown((d) =>
       d
         .addOption("before", "€100 (before)")
@@ -820,7 +821,7 @@ export function buildPredictiveSettingGroups(
           ? "menu"
           : "off";
   row()
-    .setName("Linking assistance")
+    .setName(t("ui.name.LinkingAssistance"))
     .setDesc(
       "Choose which linking help you want. “Automatic tooltips” drops a small link icon beside a " +
         "block when another note's section is a close topical match – click it to insert a " +
@@ -851,7 +852,7 @@ export function buildPredictiveSettingGroups(
   );
   if (settings.suggestLinks) {
     row()
-      .setName("Related-link sensitivity")
+      .setName(t("ui.name.RelatedLinkSensitivity"))
       .setDesc(
         "How eager the link icons are. 1 shows an icon only for a very close topical match; " +
           "5 is looser. Thresholds are calibrated from your vault's own similarity distribution, " +
@@ -867,7 +868,7 @@ export function buildPredictiveSettingGroups(
           }),
       );
     row()
-      .setName("Minimum block length for a link")
+      .setName(t("ui.name.MinimumBlockLengthLink"))
       .setDesc(
         "A paragraph or list must have at least this many words before it can show a link icon. " +
           "Higher keeps short lines (and whatever you're mid-typing) icon-free.",
@@ -909,7 +910,7 @@ export function buildPredictiveSettingGroups(
     "markdownAware",
   );
   row()
-    .setName("Excluded folders & files")
+    .setName(t("ui.name.ExcludedFoldersFiles"))
     .setDesc(
       "Files where predictions and autocorrect never run, one per line. A folder name " +
         'excludes everything beneath it ("Templates"); glob patterns work too ' +
@@ -918,7 +919,7 @@ export function buildPredictiveSettingGroups(
     .addTextArea((t) =>
       t
         .setValue(settings.excludedFolders.join("\n"))
-        .setPlaceholder("Templates\nJournal/*")
+        .setPlaceholder(t("ui.ph.TemplatesNjournal"))
         .onChange((v) => {
           settings.excludedFolders = parseExcludeList(v);
           commit();
@@ -930,7 +931,7 @@ export function buildPredictiveSettingGroups(
     "offMainThread",
   );
   row()
-    .setName("WASM SIMD acceleration")
+    .setName(t("ui.name.WasmSimdAcceleration"))
     .setDesc(
       "Run the neural model on a fast in-browser SIMD kernel (about 10x quicker than " +
         "plain JavaScript). Recommended on. It is NOT a silent fallback: if your device " +
@@ -978,7 +979,7 @@ export function buildPredictiveSettingGroups(
   if (acceleration && accelState.missing) {
     const n = accelState.missing;
     row()
-      .setName("Download language model")
+      .setName(t("ui.name.DownloadLanguageModel"))
       .setDesc(
         `${n} model file${n === 1 ? " is" : "s are"} missing, so predictions are running ` +
           `on your vault alone. The model is downloaded once from the plugin's GitHub ` +
@@ -986,7 +987,7 @@ export function buildPredictiveSettingGroups(
       )
       .addButton((btn) =>
         btn
-          .setButtonText("Download")
+          .setButtonText(t("ui.btn.Download"))
           .setCta()
           .onClick(() => {
             void acceleration.installAssets().then((ok) => {
@@ -998,7 +999,7 @@ export function buildPredictiveSettingGroups(
       );
   }
   row()
-    .setName("Suggestion style")
+    .setName(t("ui.name.SuggestionStyle"))
     .setDesc(
       "How completions appear. A popup list lets you pick from a few options; inline ghost text " +
         "shows just the top one as dimmed text ahead of the cursor. Either way, Tab accepts.",
@@ -1013,8 +1014,8 @@ export function buildPredictiveSettingGroups(
         }),
     );
   row()
-    .setName("Keyboard layout")
-    .setDesc("Which keys count as near each other, so typo correction knows which slips are likely.")
+    .setName(t("ui.name.KeyboardLayout"))
+    .setDesc(t("ui.desc.WhichKeysCountAsNear"))
     .addDropdown((d) =>
       d
         .addOptions({ qwerty: "QWERTY", qwertz: "QWERTZ", azerty: "AZERTY", dvorak: "Dvorak" })
@@ -1038,7 +1039,7 @@ export function buildPredictiveSettingGroups(
   );
 
   row()
-    .setName("Adapt to me")
+    .setName(t("ui.name.AdaptMe"))
     .setDesc(
       "Adapt to your corrections and the suggestions you accept. Turn off to keep suggestions " +
         "the same for everyone: nothing new is recorded and what's already been learned is set " +
@@ -1054,7 +1055,7 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Share file (vault path)")
+    .setName(t("ui.name.ShareFileVaultPath"))
     .setDesc(
       "Only used by the Export/Import buttons below. This is not where personalization " +
         "lives; the live data is always personalization.json in the plugin folder.",
@@ -1069,22 +1070,22 @@ export function buildPredictiveSettingGroups(
     );
 
   row()
-    .setName("Export / import personalization")
+    .setName(t("ui.name.ExportImportPersonalization"))
     .addButton((b) =>
-      b.setButtonText("Export").onClick(() => void personalization.onExport(settings.personalizationSharePath)),
+      b.setButtonText(t("ui.btn.Export")).onClick(() => void personalization.onExport(settings.personalizationSharePath)),
     )
     .addButton((b) =>
-      b.setButtonText("Import (replace)").onClick(() => void personalization.onImport(settings.personalizationSharePath, false)),
+      b.setButtonText(t("ui.btn.ImportReplace")).onClick(() => void personalization.onImport(settings.personalizationSharePath, false)),
     )
     .addButton((b) =>
-      b.setButtonText("Import (merge)").onClick(() => void personalization.onImport(settings.personalizationSharePath, true)),
+      b.setButtonText(t("ui.btn.ImportMerge")).onClick(() => void personalization.onImport(settings.personalizationSharePath, true)),
     );
 
   row()
-    .setName("Reset personalization")
-    .setDesc("Clear all learned adaptation (keyboard model, ranking, protected words).")
+    .setName(t("ui.name.ResetPersonalization"))
+    .setDesc(t("ui.desc.ClearAllLearnedAdaptationKeyboard"))
     .addButton((b) => {
-      b.setButtonText("Reset").onClick(() => void personalization.onReset());
+      b.setButtonText(t("ui.btn.Reset")).onClick(() => void personalization.onReset());
       b.buttonEl.addClass("mod-warning"); // see the Factory-reset button for why the class, not setWarning()
     });
   return b.groups;

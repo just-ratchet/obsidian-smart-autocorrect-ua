@@ -36,10 +36,16 @@ export interface AssetSpec {
  * which keeps the pin doing its real job: an older plugin can never pull a newer,
  * incompatible model. It also keeps ordinary plugin releases to the three files Obsidian
  * actually installs.
+ *
+ * MUST point at THIS fork's releases: upstream's assets are the ENGLISH models, so leaving
+ * the original URL here would hand Ukrainian users an English model that cannot complete a
+ * single word they type. Update OWNER below to the account hosting the release.
  */
-export const RELEASE_TAG = "1.0.0";
+export const RELEASE_TAG = "models-uk-1";
+const OWNER = "YOUR-GITHUB-USERNAME";
+const REPO = "obsidian-smart-autocorrect-ua";
 export const ASSET_BASE =
-  `https://github.com/Zangeti/obsidian-smart-autocorrect/releases/download/${RELEASE_TAG}`;
+  `https://github.com/${OWNER}/${REPO}/releases/download/${RELEASE_TAG}`;
 
 export const MODEL_ASSETS: AssetSpec[] = [
   {

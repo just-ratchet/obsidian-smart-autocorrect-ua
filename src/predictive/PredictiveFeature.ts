@@ -4,6 +4,7 @@
  * The fork's `main.ts` constructs this in onload and calls `enable()`.
  */
 import { Component, debounce, MarkdownRenderer, MarkdownView, Menu, Notice, Plugin, TFile, type SettingDefinitionItem } from "obsidian";
+import { t } from "./i18n";
 import type { Editor, EditorPosition, MarkdownFileInfo } from "obsidian";
 import type { EditorView } from "@codemirror/view";
 import { pathExcluded, termFreq, matchCase } from "./engine/index";
@@ -709,7 +710,7 @@ export class PredictiveFeature {
           // "link" entries is exactly the confusion this feature is meant to remove.
           if (!replaceLinkMenuItem(menu, openChooser)) {
             menu.addItem((item) =>
-              item.setTitle("Add link to a related note").setIcon("link").onClick(openChooser),
+              item.setTitle(t("ui.title.AddLinkRelatedNote")).setIcon("link").onClick(openChooser),
             );
           }
         }
@@ -760,7 +761,7 @@ export class PredictiveFeature {
           const ctx = contextWords(beforeText, this.settings.extraAbbreviations);
           menu.addItem((item) =>
             item
-              .setTitle("Suggest alternatives")
+              .setTitle(t("ui.title.SuggestAlternatives"))
               .setIcon("wand-2")
               .onClick(async () => {
                 let alts: string[] = [];

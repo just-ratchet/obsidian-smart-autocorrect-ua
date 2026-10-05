@@ -11,6 +11,7 @@
  * deterministic retrieval against notes that actually exist).
  */
 import { Menu } from "obsidian";
+import { t } from "./i18n";
 import type { App } from "obsidian";
 import { StateEffect, StateField } from "@codemirror/state";
 import { Decoration, EditorView, ViewPlugin, type DecorationSet, type ViewUpdate } from "@codemirror/view";
@@ -97,7 +98,7 @@ export function linkSuggestExtension(
       );
       menu.addItem((i) =>
         i
-          .setTitle("Dismiss this suggestion")
+          .setTitle(t("ui.title.DismissSuggestion"))
           .setIcon("x")
           .onClick(() => {
             dismissed.add(info.hit.target.toLowerCase());

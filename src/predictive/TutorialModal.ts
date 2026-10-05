@@ -14,6 +14,7 @@
  * Each step is one line of text and one picture, because that is what gets read.
  */
 import { Modal, Setting } from "obsidian";
+import { t } from "./i18n";
 import type { App } from "obsidian";
 import { TUTORIAL_IMAGES } from "./tutorialImages";
 
@@ -122,8 +123,8 @@ export class TutorialModal extends Modal {
     const last = this.step === TUTORIAL_STEPS.length - 1;
     const nav = new Setting(root);
     nav.settingEl.addClass("sa-tut-nav");
-    if (this.step > 0) nav.addButton((b) => b.setButtonText("Back").onClick(() => this.go(-1)));
-    else nav.addButton((b) => b.setButtonText("Skip").onClick(() => this.close()));
+    if (this.step > 0) nav.addButton((b) => b.setButtonText(t("ui.btn.Back")).onClick(() => this.go(-1)));
+    else nav.addButton((b) => b.setButtonText(t("ui.btn.Skip")).onClick(() => this.close()));
     nav.addButton((b) =>
       b
         .setButtonText(last ? "Start writing" : "Next")
